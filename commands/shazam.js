@@ -3,7 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const https = require('https');
-const FormData = require('form-data');
+const crypto = require('crypto');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 
@@ -12,6 +12,10 @@ const execFileAsync = promisify(execFile);
 
 const { KEITH_BASE } = require('../config/apis');
 const API = KEITH_BASE;
+
+const ACR_HOST = process.env.ACR_HOST;
+const ACR_ACCESS_KEY = process.env.ACR_ACCESS_KEY;
+const ACR_ACCESS_SECRET = process.env.ACR_ACCESS_SECRET;
 
 function extractMediaTarget(msg) {
   const m = msg.message;
@@ -50,6 +54,42 @@ function downloadBuffer(url) {
       res.on('error', reject);
     }).on('error', reject);
   });
+}
+
+async function identifyWithACRCloud(audioFilePath) {
+  if (!ACR_HOST || !ACR_ACCESS_KEY || !ACR_ACCESS_SECRET) {
+    throw new Error('ACRCloud credentials are not configured (ACR_HOST / ACR_ACCESS_KEY / ACR_ACCESS_SECRET).');
+  }
+
+  const httpMethod = 'POST';
+  const httpUri = '/v1/identify';
+  const dataType = 'audio';
+  const signatureVersion = '1';
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+
+  const stringToSign = [httpMethod, httpUri, ACR_ACCESS_KEY, dataType, signatureVersion, timestamp].join('\n');
+  const signature = crypto
+    .createHmac('sha1', ACR_ACCESS_SECRET)
+    .update(Buffer.from(stringToSign, 'utf-8'))
+    .digest('base64');
+
+  const sample = fs.readFileSync(audioFilePath);
+
+  const FormData = require('form-data');
+  const form = new FormData();
+  form.append('sample', sample, { filename: 'sample', contentType: 'application/octet-stream' });
+  form.append('sample_bytes', sample.length);
+  form.append('access_key', ACR_ACCESS_KEY);
+  form.append('data_type', dataType);
+  form.append('signature_version', signatureVersion);
+  form.append('signature', signature);
+  form.append('timestamp', timestamp);
+
+  const response = await axios.post(`https://${ACR_HOST}${httpUri}`, form, {
+    headers: form.getHeaders(),
+  });
+
+  return response.data;
 }
 
 module.exports = {
@@ -95,16 +135,9 @@ module.exports = {
         '-y', '-i', tmpInput, '-t', '20', '-vn', '-ac', '1', '-ar', '44100', '-f', 'mp3', tmpAudio,
       ]);
 
-      const form = new FormData();
-      form.append('file', fs.createReadStream(tmpAudio), 'sample.mp3');
+      const acrData = await identifyWithACRCloud(tmpAudio);
 
-      const response = await axios.post(`${API}/tools/shazam`, form, {
-        headers: form.getHeaders(),
-      });
-
-      const data = response.data;
-
-      if (!data?.status || !data.result) {
+      if (acrData?.status?.code !== 0 || !acrData?.metadata?.music?.length) {
         return await sock.sendMessage(
           jid,
           { text: "😕 Couldn't identify that track. Try a clearer clip." },
@@ -112,16 +145,22 @@ module.exports = {
         );
       }
 
-      const r = data.result;
-      const spotifyUrl = r.spotify?.external_urls?.spotify || r.spotify_url;
-      const appleUrl = r.apple_music?.url || r.apple_music_url;
-      const albumArt = r.spotify?.album?.images?.[0]?.url || r.apple_music?.artwork?.url?.replace('{w}x{h}', '500x500') || r.cover;
+      const track = acrData.metadata.music[0];
+      const title = track.title;
+      const artist = track.artists?.map(a => a.name).join(', ') || 'Unknown';
+      const album = track.album?.name;
+      const releaseDate = track.release_date;
+      const spotifyUrl = track.external_metadata?.spotify?.track?.id
+        ? `https://open.spotify.com/track/${track.external_metadata.spotify.track.id}`
+        : null;
+      const appleUrl = track.external_metadata?.apple_music?.url || null;
+      const albumArt = track.external_metadata?.spotify?.album?.images?.[0]?.url || null;
 
       const caption = [
-        `🎵 *${r.title}*`,
-        `👤 *Artist:* ${r.artist}`,
-        r.album ? `💿 *Album:* ${r.album}` : null,
-        r.release_date ? `📅 *Released:* ${r.release_date}` : null,
+        `🎵 *${title}*`,
+        `👤 *Artist:* ${artist}`,
+        album ? `💿 *Album:* ${album}` : null,
+        releaseDate ? `📅 *Released:* ${releaseDate}` : null,
         spotifyUrl ? `🟢 *Spotify:* ${spotifyUrl}` : null,
         appleUrl ? `🍎 *Apple Music:* ${appleUrl}` : null,
       ].filter(Boolean).join('\n');
@@ -133,7 +172,7 @@ module.exports = {
         await sock.sendMessage(jid, { text: caption }, { quoted: msg });
       }
 
-      const query = `${r.title} ${r.artist}`;
+      const query = `${title} ${artist}`;
 
       await sock.sendMessage(jid, { text: `🎧 Downloading *${query}*...` }, { quoted: msg });
 
@@ -154,7 +193,7 @@ module.exports = {
 
       await sock.sendMessage(
         jid,
-        { audio: { url: audioUrl }, mimetype: 'audio/mpeg', fileName: `${r.title}.mp3`, ptt: false },
+        { audio: { url: audioUrl }, mimetype: 'audio/mpeg', fileName: `${title}.mp3`, ptt: false },
         { quoted: msg }
       );
     } catch (error) {
