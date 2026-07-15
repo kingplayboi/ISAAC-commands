@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { isSudo } = require('./utils/isSudo');
+const { isSudo } = require('../utils/isSudo');
 
 module.exports = {
   name: 'pair',
