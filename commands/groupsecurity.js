@@ -11,6 +11,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { isOwner } = require('../utils/isOwner');
 
 const settingsPath = path.join(__dirname, '../config/groupSettings.json');
 
@@ -131,40 +132,124 @@ module.exports = [
     }
   },
 
-  // ── GSTATUS — post a replied photo/video directly into the group chat ────────
+  // ── GSTATUS — post text/media to the group's actual WhatsApp status feed ────
+  // (distinct from posting into the group chat — this uses Baileys'
+  // groupStatusMessage, which shows up in the status/updates area, scoped
+  // to this group.) Owner-only, matching the bot's other broadcast-style
+  // commands.
   {
     name: 'gstatus',
-    description: "Post a replied photo/video into this group's chat (not the bot's WhatsApp status). Usage: reply to media with .gstatus",
-    async execute(sock, msg) {
+    aliases: ['togroupstatus', 'statusgroup', 'gcstatus', 'gas', 'gps'],
+    description: "Post a message or replied media to this group's status feed (owner only). Usage: .gstatus <text>  or  reply to media with .gstatus <caption>",
+    async execute(sock, msg, args) {
       const jid = msg.key.remoteJid;
 
+      if (!isOwner(msg)) {
+        return sock.sendMessage(jid, { text: '❌ Only the bot owner can use this command.' }, { quoted: msg });
+      }
       if (!jid.endsWith('@g.us')) {
         return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
       }
 
+      const text = args.join(' ').trim();
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const quoted = ctx?.quotedMessage;
 
-      if (!quoted?.imageMessage && !quoted?.videoMessage) {
-        return sock.sendMessage(jid, { text: '❌ Reply to a photo or video with .gstatus' }, { quoted: msg });
+      if (!text && !quoted) {
+        return sock.sendMessage(
+          jid,
+          {
+            text:
+              '📌 Usage:\n' +
+              '• .gstatus <text>\n' +
+              '• Reply to an image/video/audio/document/sticker with .gstatus <caption>\n' +
+              '• Or just .gstatus to forward quoted media without caption',
+          },
+          { quoted: msg }
+        );
       }
+
+      let tmpFiles = [];
 
       try {
         const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-        const media = await downloadMediaMessage(
-          { message: quoted, key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant } },
-          'buffer',
-          {}
-        );
+        const os = require('os');
+        const path = require('path');
 
-        const type = quoted.imageMessage ? 'image' : 'video';
-        const caption = quoted[`${type}Message`]?.caption || '';
+        const payload = { groupStatusMessage: {} };
 
-        // Send straight into the group chat as a normal message —
-        // this is the "group status", distinct from the bot's personal WhatsApp status.
-        await sock.sendMessage(jid, { [type]: media, caption }, { quoted: msg });
-      } catch (e) {
-        await sock.sendMessage(jid, { text: '❌ Failed to post: ' + e.message }, { quoted: msg });
+        if (quoted) {
+          const quotedKey = { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant, fromMe: false };
+          const quotedMsg = { message: quoted, key: quotedKey };
+
+          if (quoted.imageMessage) {
+            const caption = text || quoted.imageMessage.caption || '';
+            const buffer = await downloadMediaMessage(quotedMsg, 'buffer', {});
+            const filePath = path.join(os.tmpdir(), `gstatus_${Date.now()}.jpg`);
+            fs.writeFileSync(filePath, buffer);
+            tmpFiles.push(filePath);
+            payload.groupStatusMessage.image = { url: filePath };
+            if (caption) payload.groupStatusMessage.caption = caption;
+
+          } else if (quoted.videoMessage) {
+            const caption = text || quoted.videoMessage.caption || '';
+            const buffer = await downloadMediaMessage(quotedMsg, 'buffer', {});
+            const filePath = path.join(os.tmpdir(), `gstatus_${Date.now()}.mp4`);
+            fs.writeFileSync(filePath, buffer);
+            tmpFiles.push(filePath);
+            payload.groupStatusMessage.video = { url: filePath };
+            if (caption) payload.groupStatusMessage.caption = caption;
+
+          } else if (quoted.audioMessage) {
+            const buffer = await downloadMediaMessage(quotedMsg, 'buffer', {});
+            const inputPath = path.join(os.tmpdir(), `gstatus_in_${Date.now()}.ogg`);
+            const outputPath = path.join(os.tmpdir(), `gstatus_out_${Date.now()}.ogg`);
+            fs.writeFileSync(inputPath, buffer);
+
+            const ffmpegPath = process.env.FFMPEG_PATH || require('ffmpeg-static') || 'ffmpeg';
+            const { execFile } = require('child_process');
+            const { promisify } = require('util');
+            const execFileAsync = promisify(execFile);
+            await execFileAsync(ffmpegPath, [
+              '-y', '-i', inputPath, '-c:a', 'libopus', '-b:a', '128k', outputPath,
+            ]);
+
+            tmpFiles.push(inputPath, outputPath);
+            payload.groupStatusMessage.audio = { url: outputPath };
+
+          } else if (quoted.documentMessage) {
+            const buffer = await downloadMediaMessage(quotedMsg, 'buffer', {});
+            const fileName = quoted.documentMessage.fileName || `gstatus_${Date.now()}`;
+            const filePath = path.join(os.tmpdir(), fileName);
+            fs.writeFileSync(filePath, buffer);
+            tmpFiles.push(filePath);
+            payload.groupStatusMessage.document = { url: filePath };
+
+          } else if (quoted.stickerMessage) {
+            const buffer = await downloadMediaMessage(quotedMsg, 'buffer', {});
+            const filePath = path.join(os.tmpdir(), `gstatus_${Date.now()}.webp`);
+            fs.writeFileSync(filePath, buffer);
+            tmpFiles.push(filePath);
+            payload.groupStatusMessage.sticker = { url: filePath };
+
+          } else if (quoted.conversation || quoted.extendedTextMessage?.text) {
+            payload.groupStatusMessage.text = quoted.conversation || quoted.extendedTextMessage.text;
+          }
+
+          if (text && !payload.groupStatusMessage.caption && !payload.groupStatusMessage.text) {
+            payload.groupStatusMessage.caption = text;
+          }
+        } else {
+          payload.groupStatusMessage.text = text;
+        }
+
+        await sock.sendMessage(jid, payload, { quoted: msg });
+      } catch (err) {
+        await sock.sendMessage(jid, { text: `❌ Error sending group status: ${err.message}` }, { quoted: msg });
+      } finally {
+        tmpFiles.forEach((f) => {
+          try { fs.unlinkSync(f); } catch {}
+        });
       }
     }
   },
