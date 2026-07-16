@@ -1,16 +1,11 @@
-const { jidNormalizedUser } = require('@whiskeysockets/baileys');
-
 module.exports = {
   name: 'leavegroup',
   aliases: ['leavegc', 'leavebylink'],
   description: 'Makes the bot leave a group using its invite link (Owner only).',
 
   async execute(sock, msg, args) {
-    const owner =
-      msg.key.participant === process.env.OWNER_NUMBER + '@s.whatsapp.net' ||
-      msg.key.remoteJid === process.env.OWNER_NUMBER + '@s.whatsapp.net';
-
-    if (!owner) {
+    // Same owner check used by update.js
+    if (!msg.key.fromMe) {
       return sock.sendMessage(
         msg.key.remoteJid,
         { text: '❌ This command is owner only.' },
@@ -55,13 +50,10 @@ module.exports = {
         );
       }
 
-      await sock.sendMessage(
-        groupJid,
-        {
-          text:
-            '👋 I have been instructed by my owner to leave this group.\n\nThank you for having me!'
-        }
-      );
+      await sock.sendMessage(groupJid, {
+        text:
+          '👋 I have been instructed by my owner to leave this group.\n\nThank you for having me!'
+      });
 
       await sock.groupLeave(groupJid);
 
