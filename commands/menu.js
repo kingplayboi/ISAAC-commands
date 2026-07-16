@@ -66,7 +66,7 @@ const currentTime = new Intl.DateTimeFormat('en-US', {
         menuMessage += `  🗓️ Date   : ${currentDate}\n`;
         menuMessage += `  💾 Ram    : ${usedRamGb} GB / ${totalRamGb} GB\n`;
         menuMessage += `  ⏱️ Uptime : ${formatUptime(uptimeSeconds)}\n`;
-menuMessage += `  🔌 Plugins : ${commands.size} commands\n`;
+menuMessage += `  🔌 Plugins : ${new Set(commands.values()).size} commands\n`;
 menuMessage += `└──────────────────────────────┘\n`;
 
         // Your 13 commands
