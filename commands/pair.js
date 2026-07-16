@@ -18,7 +18,7 @@ module.exports = {
     if (!q) {
       return await sock.sendMessage(
         jid,
-        { text: 'Please provide a valid WhatsApp number.\n\nExample: .pair 25411428XXX' },
+        { text: 'Please provide a valid WhatsApp number.\n\nExample: .pair 254754574XXX' },
         { quoted: msg }
       );
     }
