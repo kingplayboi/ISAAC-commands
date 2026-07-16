@@ -25,16 +25,21 @@ for (const file of files) {
     continue;
   }
 
-  if (!command || !command.name) {
+  const exportedCommands = Array.isArray(command) ? command : [command];
+  const validCommands = exportedCommands.filter((c) => c && c.name);
+
+  if (validCommands.length === 0) {
     broken.push({ file, error: 'No exported "name" field' });
     continue;
   }
 
-  const namesToCheck = [command.name, ...(command.aliases || [])];
-  const inMenu = namesToCheck.some((n) => menuSource.includes(`'${n}'`));
+  for (const cmd of validCommands) {
+    const namesToCheck = [cmd.name, ...(cmd.aliases || [])];
+    const inMenu = namesToCheck.some((n) => menuSource.includes(`'${n}'`));
 
-  if (!inMenu) {
-    missing.push({ file, name: command.name, aliases: command.aliases || [] });
+    if (!inMenu) {
+      missing.push({ file, name: cmd.name, aliases: cmd.aliases || [] });
+    }
   }
 }
 
