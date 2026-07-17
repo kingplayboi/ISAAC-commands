@@ -89,7 +89,7 @@ const categories = {
     'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
     'MISC': ['isaac', 'trt', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
 };        for (const [categoryName, commandList] of Object.entries(categories)) {
-            menuMessage += ` ╭─❏ ${categoryName} ❏\n`;
+            menuMessage += ` ╭─❏ *${categoryName}* ❏\n`;
             commandList.forEach(cmd => {
                 menuMessage += ` │ ${formatCommand(cmd)}\n`;
             });
