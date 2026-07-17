@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 
 const os = require('os');
 const config = require('../config/config');
@@ -94,6 +96,12 @@ const categories = {
             menuMessage += ` ╰─────────────────\n`;
         }
 
-        await sock.sendMessage(jid, { text: menuMessage });
+        const imagePath = path.join(__dirname, '../assets/script.jpg');
+
+        if (fs.existsSync(imagePath)) {
+            await sock.sendMessage(jid, { image: fs.readFileSync(imagePath), caption: menuMessage });
+        } else {
+            await sock.sendMessage(jid, { text: menuMessage });
+        }
     },
 };
