@@ -73,21 +73,21 @@ menuMessage += `└────────────────────�
 
         // Your 13 commands
 const categories = {
-    'OWNER': ['addsudo', 'antibot', 'antidelete', 'antilinkall', 'antitag', 'autobio', 'autolike', 'backup', 'badword', 'blocklist', 'broadcast', 'cat', 'checksudo', 'clearsudos', 'delsudo', 'eval', 'fetch', 'gauth', 'getcmd', 'getfile', 'kill', 'kill2', 'logout', 'menutype', 'pair', 'reminder', 'restart', 'settings', 'shell', 'task', 'update', 'updatenow', 'wapresence', 'welcomegoodbye'],
-    'GROUP': ['add', 'admin', 'amute', 'antilink', 'approve', 'aunmute', 'ban', 'close', 'demote', 'desc', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'foreigners', 'goodbye', 'groupinfo', 'groupstatus', 'hidetag', 'icon', 'invite', 'join', 'kick', 'leavegroup', 'link', 'mute', 'open', 'promote', 'reject', 'revoke', 'setgreet', 'subject', 'tag', 'tagall', 'unban', 'unmute', 'vcf', 'warn', 'welcome'],
-    'SETTINGS': ['anticall', 'autoread', 'autorecording', 'autotyping', 'autoview', 'mode', 'pdm', 'prefix', 'zushi'],
-    'DOWNLOAD': ['audio', 'download', 'fb', 'ig', 'igstory', 'lyrics', 'lyrics2', 'pindl', 'play', 'play2', 'shazam', 'song', 'spotify', 'tiktok', 'twitter', 'video', 'video2'],
-    'AI': ['bing', 'claude', 'dall', 'gemini', 'gpt', 'gptdm', 'groq', 'imagine', 'lydia', 'tts', 'upload', 'upscale', 'vision', 'vision2', 'void', 'worm', 'wormgpt'],
-    'USER': ['block', 'fullpp', 'gjid', 'ison', 'jid', 'left', 'pp', 'unblock'],
-    'TOOLS': ['apk', 'clearcache', 'define', 'gitclone', 'imagesearch', 'qr', 'screenshot', 'url', 'webscan', 'zip', 'zodiac'],
+    'OWNER': ['settings', 'pair', 'kill', 'kill2', 'backup', 'reminder', 'task', 'update', 'updatenow', 'eval', 'gauth', 'antilinkall', 'antidelete', 'autolike', 'autobio', 'menutype', 'wapresence', 'badword', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos'],
+    'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'amute', 'aunmute', 'ban', 'unban', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners'],
+    'SETTINGS': ['anticall', 'autoread', 'autorecording', 'autotyping', 'mode', 'prefix', 'autoview', 'pdm', 'zushi'],
+    'DOWNLOAD': ['download', 'igstory', 'pindl', 'play2', 'video', 'video2', 'audio', 'spotify', 'play', 'tiktok', 'ig', 'fb', 'twitter', 'song', 'shazam', 'lyrics', 'lyrics2'],
+    'AI': ['gemini', 'upload', 'imagine', 'vision2', 'groq', 'worm', 'gpt', 'dall', 'bing', 'upscale', 'lydia', 'vision', 'void', 'claude', 'wormgpt', 'tts', 'gptdm'],
+    'USER': ['block', 'unblock', 'pp', 'fullpp', 'jid', 'gjid', 'left', 'ison'],
+    'TOOLS': ['webscan', 'zip', 'screenshot', 'gitclone', 'apk', 'clearcache', 'qr', 'zodiac', 'url', 'imagesearch', 'define'],
     'SECURITY': ['antifake', 'antigm', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
-    'FOOTBALL': ['bundesliga', 'bundesligascorers', 'epl', 'eplscorers', 'euro', 'fifa', 'fifaplayoffs', 'laliga', 'laligascorers', 'ligue1', 'ligue1scorers', 'livescore', 'news', 'playersearch', 'seriea', 'serieascorers', 'standings', 'table', 'teamsearch', 'ucl', 'uclscorers'],
-    'CODING': ['compile-c', 'compile-c++', 'compile-js', 'compile-py', 'enc', 'gpass'],
-    'MEDIA': ['botpp', 'getpfp', 'mix', 'photo', 'remini', 'remini2', 'removebg', 's', 'save', 'similarimage', 'smeme', 'take', 'vv', 'vv2'],
-    'WHATSAPP': ['antiedit', 'caption', 'cinfo', 'clear', 'del', 'doc', 'online', 'poll', 'react', 'save1', 'setstatus', 'status'],
-    'CONVERTER': ['carbon', 'cut', 'merge', 'ocr', 'toaudio', 'toexcel', 'toimg', 'topdf', 'totext', 'tovideo', 'toword'],
-    'GAMES': ['answer', 'game', 'guess', 'mans', 'mathquiz', 'move', 'rps', 'tictactoe', 'ttend', 'wgend', 'wordguess'],
-    'MISC': ['alive', 'calc', 'donate', 'help', 'isaac', 'joke', 'menu', 'owner', 'ping', 'quote', 'script', 'stats', 'time', 'trt', 'uptime', 'user'],
+    'FOOTBALL': ['livescore', 'standings', 'table', 'bundesliga', 'epl', 'laliga', 'ligue1', 'seriea', 'ucl', 'news', 'playersearch', 'teamsearch', 'fifa', 'fifaplayoffs', 'euro', 'eplscorers', 'laligascorers', 'bundesligascorers', 'serieascorers', 'ligue1scorers', 'uclscorers'],
+    'CODING': ['enc', 'gpass', 'compile-py', 'compile-js', 'compile-c', 'compile-c++'],
+    'MEDIA': ['s', 'take', 'photo', 'mix', 'smeme', 'vv', 'vv2', 'botpp', 'getpfp', 'removebg', 'similarimage', 'remini', 'remini2', 'save'],
+    'WHATSAPP': ['poll', 'react', 'del', 'setstatus', 'status', 'online', 'caption', 'doc', 'antiedit', 'cinfo', 'clear', 'save1'],
+    'CONVERTER': ['topdf', 'toexcel', 'toword', 'tovideo', 'toaudio', 'toimg', 'ocr', 'totext', 'carbon', 'cut', 'merge'],
+    'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
+    'MISC': ['isaac', 'trt', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
 };        for (const [categoryName, commandList] of Object.entries(categories)) {
             menuMessage += ` ╭─❏ ${categoryName} ❏\n`;
             commandList.forEach(cmd => {
