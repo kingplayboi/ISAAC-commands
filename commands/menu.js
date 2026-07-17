@@ -73,21 +73,21 @@ menuMessage += `└────────────────────�
 
         // Your 13 commands
 const categories = {
+    'OWNER': ['kill2', 'pair', 'settings', 'kill', 'backup', 'reminder', 'task', 'update', 'updatenow', 'eval', 'gauth', 'antilinkall', 'antidelete', 'autolike', 'autobio', 'menutype', 'wapresence', 'badword', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos'],
     'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'amute', 'aunmute', 'ban', 'unban', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners'],
     'SETTINGS': ['anticall', 'autoread', 'autorecording', 'autotyping', 'mode', 'prefix', 'autoview', 'pdm', 'zushi'],
     'DOWNLOAD': ['download', 'igstory', 'pindl', 'play2', 'video', 'video2', 'audio', 'spotify', 'play', 'tiktok', 'ig', 'fb', 'twitter', 'song', 'shazam', 'lyrics', 'lyrics2'],
-    'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
-    'WHATSAPP': ['poll', 'react', 'del', 'setstatus', 'status', 'online', 'caption', 'doc', 'antiedit', 'cinfo', 'clear', 'save1'],
     'AI': ['gemini', 'upload', 'imagine', 'vision2', 'groq', 'worm', 'gpt', 'dall', 'bing', 'upscale', 'lydia', 'vision', 'void', 'claude', 'wormgpt', 'tts', 'gptdm'],
-    'SECURITY': ['antifake', 'antigm', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
     'USER': ['block', 'unblock', 'pp', 'fullpp', 'jid', 'gjid', 'left', 'ison'],
-    'OWNER': ['owner', 'kill2', 'pair', 'settings', 'kill', 'backup', 'reminder', 'task', 'update', 'updatenow', 'eval', 'gauth', 'antilinkall', 'antidelete', 'autolike', 'autobio', 'menutype', 'wapresence', 'badword', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos'],
     'TOOLS': ['webscan', 'zip', 'screenshot', 'gitclone', 'apk', 'clearcache', 'qr', 'zodiac', 'url', 'imagesearch', 'define'],
+    'SECURITY': ['antifake', 'antigm', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
     'FOOTBALL': ['livescore', 'standings', 'table', 'bundesliga', 'epl', 'laliga', 'ligue1', 'seriea', 'ucl', 'news', 'playersearch', 'teamsearch', 'fifa', 'fifaplayoffs', 'euro', 'eplscorers', 'laligascorers', 'bundesligascorers', 'serieascorers', 'ligue1scorers', 'uclscorers'],
     'CODING': ['enc', 'gpass', 'compile-py', 'compile-js', 'compile-c', 'compile-c++'],
-    'CONVERTER': ['topdf', 'toexcel', 'toword', 'tovideo', 'toaudio', 'toimg', 'ocr', 'totext', 'carbon', 'cut', 'merge'],
     'MEDIA': ['s', 'take', 'photo', 'mix', 'smeme', 'vv', 'vv2', 'botpp', 'getpfp', 'removebg', 'similarimage', 'remini', 'remini2', 'save'],
-    'MISC': ['isaac', 'trt', 'script', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
+    'WHATSAPP': ['poll', 'react', 'del', 'setstatus', 'status', 'online', 'caption', 'doc', 'antiedit', 'cinfo', 'clear', 'save1'],
+    'CONVERTER': ['topdf', 'toexcel', 'toword', 'tovideo', 'toaudio', 'toimg', 'ocr', 'totext', 'carbon', 'cut', 'merge'],
+    'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
+    'MISC': ['isaac', 'trt', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
 };        for (const [categoryName, commandList] of Object.entries(categories)) {
             menuMessage += ` ╭─❏ ${categoryName} ❏\n`;
             commandList.forEach(cmd => {
