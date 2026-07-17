@@ -1,9 +1,7 @@
 const axios = require('axios');
 const FormData = require('form-data');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { KEITH_BASE } = require('../config/apis');
 
 async function uploadToCatbox(buffer, filename) {
   const form = new FormData();
@@ -14,9 +12,9 @@ async function uploadToCatbox(buffer, filename) {
 }
 
 module.exports = {
-  name: 'vision',
-  aliases: ['imgai', 'analyze', 'llamavision'],
-  description: 'Analyze an image with LLaMA Vision AI (quote an image)',
+  name: 'vision2',
+  aliases: ['imgai2', 'analyze2', 'geminivision'],
+  description: 'Analyze an image with AI (quote an image)',
 
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
@@ -25,16 +23,13 @@ module.exports = {
     const question = args.join(' ').trim();
 
     if (!quoted?.imageMessage) {
-      return await sock.sendMessage(jid, { text: '📌 Reply to an image with a question.\nExample: *.vision what is this?*' }, { quoted: msg });
+      return await sock.sendMessage(jid, { text: '📌 Reply to an image message to analyze it' }, { quoted: msg });
     }
     if (!question) {
-      return await sock.sendMessage(jid, { text: '❌ Provide a question about the image!\nExample: *.vision what is in this image?*' }, { quoted: msg });
+      return await sock.sendMessage(jid, { text: '❌ Provide a question/instruction!' }, { quoted: msg });
     }
 
     try {
-      await sock.sendMessage(jid, { react: { text: '🤖', key: msg.key } });
-      await sock.sendMessage(jid, { text: '🔍 Analyzing your image...' }, { quoted: msg });
-
       const buffer = await downloadMediaMessage(
         { key: { remoteJid: jid, id: ctx.stanzaId, fromMe: false, participant: ctx.participant }, message: quoted },
         'buffer',
@@ -44,18 +39,21 @@ module.exports = {
 
       const imageUrl = await uploadToCatbox(buffer, 'image.jpg');
 
-      const res = await axios.get(
-        `https://api.bk9.dev/ai/vision?q=${encodeURIComponent(question)}&image_url=${encodeURIComponent(imageUrl)}&model=meta-llama/llama-4-scout-17b-16e-instruct`
-      );
-      const data = res.data;
+      await sock.sendMessage(jid, { react: { text: '🤖', key: msg.key } });
+      await sock.sendMessage(jid, { text: 'A moment analyzing your image...' }, { quoted: msg });
 
-      if (!data?.status || !data?.BK9) {
-        return await sock.sendMessage(jid, { text: '❌ No response from Vision AI. Try again.' }, { quoted: msg });
+      const res = await axios.get(
+        `${KEITH_BASE}/ai/vision?image=${encodeURIComponent(imageUrl)}&q=${encodeURIComponent(question)}`
+      );
+      const result = res.data;
+
+      if (!result?.status || !result?.result) {
+        return await sock.sendMessage(jid, { text: '❌ No response from Vision AI' }, { quoted: msg });
       }
 
-      await sock.sendMessage(jid, { text: `🤖 *Vision Analysis*\n\n${data.BK9}` }, { quoted: msg });
+      await sock.sendMessage(jid, { text: result.result }, { quoted: msg });
     } catch (error) {
-      console.error('[VISION ERROR]', error);
+      console.error('[VISION2 ERROR]', error);
       await sock.sendMessage(jid, { text: '❌ Failed to analyze image.' }, { quoted: msg });
     }
   },
