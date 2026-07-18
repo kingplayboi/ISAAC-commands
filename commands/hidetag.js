@@ -1,11 +1,3 @@
-/**
- * commands/hidetag.js
- * --------------------
- * Sends a message that notifies every group member, without visibly
- * listing their names/mentions in the text. Admin-only.
- *
- * Usage: .hidetag Your message here
- */
 module.exports = {
   name: 'hidetag',
   description: 'Notifies all members silently, without listing mentions (admin only).',
