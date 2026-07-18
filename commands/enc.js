@@ -1,19 +1,3 @@
-/**
- * commands/enc.js
- * ----------------
- * Encodes or decodes text using common formats: base64, hex, url, binary.
- *
- * Usage:
- *   .enc base64 hello world       → encodes "hello world" to base64
- *   .enc decode base64 aGVsbG8=   → decodes base64 back to text
- *   .enc hex hello                → encodes to hex
- *   .enc decode hex 68656c6c6f    → decodes hex back to text
- *   .enc url hello world!         → URL-encodes
- *   .enc decode url hello%20world → URL-decodes
- *   .enc binary hi                → encodes to binary (8-bit per char)
- *   .enc decode binary 01101000...→ decodes binary back to text
- */
-
 const SUPPORTED = ['base64', 'hex', 'url', 'binary'];
 
 function encode(format, text) {
