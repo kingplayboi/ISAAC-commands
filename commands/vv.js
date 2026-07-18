@@ -1,12 +1,3 @@
-/**
- * commands/vv.js
- * ----------------
- * Retrieves a view-once photo/video from a quoted message and resends
- * it normally, so it can be viewed again or saved.
- *
- * Usage: reply to a view-once photo or video with .vv
- */
-
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 function unwrapViewOnce(message) {
