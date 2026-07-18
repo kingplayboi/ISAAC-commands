@@ -1,9 +1,3 @@
-/**
- * commands/usertools.js
- * -----------------------
- * User utility commands: block, fullpp, gjid, jid, left, pp, unblock
- */
-
 const https = require('https');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
@@ -67,7 +61,7 @@ module.exports = [
     }
   },
 
-  // ── PP — get a user's profile picture ─────────────────────────────────────────
+  // ── PP ─────────────────────────────────────────
 {
     name: 'pp',
     description: "Get a user's profile picture. Usage: .pp @user (or reply to their message)",
@@ -126,7 +120,7 @@ module.exports = [
     }
 },
 
-  // ── FULLPP — set the bot's own WhatsApp profile picture from a replied image ──
+  // ── FULLPP ──
   {
     name: 'fullpp',
     description: "Set your WhatsApp profile picture from a replied image. Usage: reply to an image with .fullpp",
@@ -159,7 +153,7 @@ module.exports = [
     }
   },
 
-  // ── JID — get the JID of a user ────────────────────────────────────────────────
+  // ── JID ───────────────────────────────────────────────
   {
     name: 'jid',
     description: 'Get your own or a tagged user\'s JID. Usage: .jid or .jid @user',
@@ -172,7 +166,7 @@ module.exports = [
     }
   },
 
-  // ── GJID — get the group's JID ───────────────────────────────────────────────
+  // ── GJID ──────────────────────────────────────────────
   {
     name: 'gjid',
     description: "Get the current group's JID.",
@@ -185,7 +179,7 @@ module.exports = [
     }
   },
 
-  // ── LEFT — make bot leave a group ──────────────────────────────────────────────
+  // ── LEFT ─────────────────────────────────────────────
   {
     name: 'left',
     description: 'Make the bot leave the current group.',
