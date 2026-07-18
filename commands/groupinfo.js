@@ -1,11 +1,3 @@
-/**
- * commands/groupinfo.js
- * ---------------------
- * Displays basic information about the current group: name, description,
- * member count, and the list of admins.
- *
- * Usage: !groupinfo
- */
 module.exports = {
   name: 'groupinfo',
   description: 'Shows info about the current group.',
