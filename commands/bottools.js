@@ -1,9 +1,3 @@
-/**
- * commands/bottools.js
- * ----------------------
- * Bot management commands: backup, reminder, task, tog, update, updatenow
- */
-
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -145,7 +139,7 @@ module.exports = [
     }
   },
 
-  // ── UPDATE — check for git updates ─────────────────────────────────────────────
+  // ── UPDATE ─────────────────────────────────────────────
   {
     name: 'update',
     description: 'Check if bot updates are available on GitHub.',
@@ -168,7 +162,7 @@ module.exports = [
     }
   },
 
-  // ── UPDATE NOW — pull latest changes and restart ──────────────────────────────
+  // ── UPDATE NOW ──────────────────────────────
   {
     name: 'updatenow',
     description: 'Pull latest updates from GitHub and restart the bot.',
