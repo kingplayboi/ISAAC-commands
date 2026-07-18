@@ -1,14 +1,5 @@
-/**
- * commands/prefix.js
- * ---------------------
- * Change the bot's command prefix at runtime. Persists across restarts
- * via config/runtimeSettings.js, unlike a plain in-memory change.
- * Usage: .prefix <new prefix>
- * Owner-only.
- */
-
+const settingsStore = require('../utils/settingsStore');
 const config = require('../config/config');
-const runtimeSettings = require('../config/runtimeSettings');
 
 module.exports = {
   name: 'prefix',
@@ -20,11 +11,12 @@ module.exports = {
       return sock.sendMessage(jid, { text: '❌ Only the owner can change the prefix.' }, { quoted: msg });
     }
 
+    const currentPrefix = settingsStore.get('prefix', config.prefix);
     const newPrefix = args[0];
 
     if (!newPrefix) {
       return sock.sendMessage(jid, {
-        text: `⚡ *Current prefix:* \`${config.prefix}\`\n\nUsage: ${config.prefix}prefix <new prefix>\nExample: ${config.prefix}prefix !`
+        text: `⚡ *Current prefix:* \`${currentPrefix}\`\n\nUsage: ${currentPrefix}prefix <new prefix>\nExample: ${currentPrefix}prefix !`
       }, { quoted: msg });
     }
 
@@ -32,12 +24,10 @@ module.exports = {
       return sock.sendMessage(jid, { text: '❌ Keep the prefix short — 1 to 3 characters works best.' }, { quoted: msg });
     }
 
-    const oldPrefix = config.prefix;
-    config.prefix = newPrefix;
-    runtimeSettings.set('prefix', newPrefix);
+    settingsStore.set('prefix', newPrefix);
 
     await sock.sendMessage(jid, {
-      text: `✅ Prefix changed from \`${oldPrefix}\` to \`${newPrefix}\`.\n\nFrom now on, use commands like: ${newPrefix}menu`
+      text: `✅ Prefix changed from \`${currentPrefix}\` to \`${newPrefix}\`.\n\nFrom now on, use commands like: ${newPrefix}menu`
     }, { quoted: msg });
   }
 };
