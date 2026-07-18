@@ -1,9 +1,3 @@
-/**
- * commands/reject.js
- * ---------------------
- * Rejects all pending join requests. Admin only.
- * Usage: .reject
- */
 const { isBotAdmin, isSenderAdmin } = require('../utils/isAdmin');
 
 module.exports = {
