@@ -1,10 +1,3 @@
-/**
- * commands/alive.js
- * -----------------
- * ISAAC-MD Alive Command
- * Sends a stylish alive message followed by the alive audio.
- */
-
 const fs = require("fs");
 const path = require("path");
 
