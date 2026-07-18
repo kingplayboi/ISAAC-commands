@@ -1,11 +1,3 @@
-/**
- * commands/unban.js
- * -------------------
- * Removes a user from the ban list. Owner-only.
- * Usage:
- *   .unban @user        (mention)
- *   .unban (as a reply to the target's message)
- */
 const { isOwner } = require('../utils/isOwner');
 const { unbanUser, isBanned } = require('../utils/banList');
 
