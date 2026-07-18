@@ -1,13 +1,3 @@
-/**
- * commands/compile-c.js
- * ------------------------
- * Compiles a short C snippet with clang and runs it, returning stdout.
- * Requires: pkg install clang
- *
- * Usage:
- *   .compile-c #include <stdio.h>\nint main(){printf("hi");return 0;}
- */
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
