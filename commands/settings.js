@@ -1,14 +1,6 @@
-/**
- * commands/settings.js
- * ----------------------
- * Shows a snapshot of the bot's current settings across security,
- * automation, and general behavior categories.
- * Usage: .settings
- */
-const fs = require('fs');
-const path = require('path');
 const config = require('../config/config');
 const settingsStore = require('../utils/settingsStore');
+const groupSettingsStore = require('../utils/groupSettingsStore');
 
 function onOff(value) {
     return value ? '✅ ON' : '❌ OFF';
@@ -20,14 +12,9 @@ module.exports = {
     async execute(sock, msg) {
         const jid = msg.key.remoteJid;
 
-        // Antilink is per-group, so read it for the chat this command was run in.
         let antilinkOn = false;
         if (jid.endsWith('@g.us')) {
-            const settingsPath = path.join(__dirname, '../config/groupSettings.json');
-            if (fs.existsSync(settingsPath)) {
-                const groupSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-                antilinkOn = groupSettings[jid]?.antilink === true;
-            }
+            antilinkOn = groupSettingsStore.get(jid, 'antilink', false);
         }
 
         const text = `╔══════════════════════╗
@@ -44,7 +31,7 @@ module.exports = {
 ┗ BadWord: ${onOff(settingsStore.get('badword', false))}
 
 *🤖 Automation*
-┣ AutoRead: ${onOff(config.READ_COMMAND)}
+┣ AutoRead: ${onOff(settingsStore.get('autoread', false))}
 ┣ AutoLike: ${onOff(settingsStore.get('autolike', false))}
 ┣ AutoView: ${onOff(settingsStore.get('autoview', true))}
 ┣ AutoBio: ${onOff(settingsStore.get('autobio', false))}
@@ -52,9 +39,9 @@ module.exports = {
 
 *💬 Bot Behaviour*
 ┣ GPTDM: ${onOff(settingsStore.get('gptdm', false))}
-┣ Mode: 🌐 ${(config.WORK_TYPE || 'public').toUpperCase()}
-┣ Prefix: ${config.prefix}
-┣ MenuType: 📋 ${(config.MENU_TYPE || 'list').toUpperCase()}
+┣ Mode: 🌐 ${settingsStore.get('mode', 'public').toUpperCase()}
+┣ Prefix: ${settingsStore.get('prefix', config.prefix)}
+┣ MenuType: 📋 ${settingsStore.get('menutype', 'list').toUpperCase()}
 ┗ WAPresence: ${settingsStore.get('wapresence', false) ? '🟢 ONLINE' : '🔴 OFFLINE'}`;
 
         await sock.sendMessage(jid, { text }, { quoted: msg });

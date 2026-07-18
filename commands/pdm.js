@@ -1,18 +1,4 @@
-/**
- * commands/pdm.js
- * -----------------
- * Enable or disable automatic notifications for promote/demote events.
- * Usage: .pdm on/off
- *
- * NOTE: Wire this setting into your group-participants-update event handler
- * (check settings[jid].pdm before sending a promote/demote notification)
- * for this toggle to actually take effect.
- */
-
-const fs = require('fs');
-const path = require('path');
-
-const settingsPath = path.join(__dirname, '../config/groupSettings.json');
+const groupSettingsStore = require('../utils/groupSettingsStore');
 
 module.exports = {
   name: 'pdm',
@@ -28,12 +14,7 @@ module.exports = {
       return sock.sendMessage(jid, { text: '❌ Usage: .pdm on  or  .pdm off' }, { quoted: msg });
     }
 
-    let settings = {};
-    if (fs.existsSync(settingsPath)) settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-    if (!settings[jid]) settings[jid] = {};
-    settings[jid].pdm = mode === 'on';
-    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-
+    groupSettingsStore.set(jid, 'pdm', mode === 'on');
     await sock.sendMessage(jid, { text: `📢 Promote/demote notifications turned ${mode}.` }, { quoted: msg });
   }
 };

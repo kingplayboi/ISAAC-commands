@@ -1,4 +1,4 @@
-const config = require('../config/config');
+const settingsStore = require('../utils/settingsStore');
 
 module.exports = {
     name: 'menutype',
@@ -9,12 +9,12 @@ module.exports = {
         const choice = args[0]?.toLowerCase();
 
         if (choice === 'list' || choice === 'button') {
-            config.MENU_TYPE = choice;
+            settingsStore.set('menutype', choice);
             return await sock.sendMessage(msg.key.remoteJid, { text: `📋 *Menu Type:* set to *${choice}*` });
         }
 
         await sock.sendMessage(msg.key.remoteJid, {
-            text: `📋 *Current Menu Type:* ${config.MENU_TYPE || 'list'}\n\n💡 Use \`.menutype list\` or \`.menutype button\` to change it.`
+            text: `📋 *Current Menu Type:* ${settingsStore.get('menutype', 'list')}\n\n💡 Use \`.menutype list\` or \`.menutype button\` to change it.`
         });
     },
 };

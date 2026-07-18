@@ -1,36 +1,5 @@
-/**
- * commands/groupsecurity.js
- * ---------------------------
- * Group security/anti-spam commands: antifake, antigm, antigstatus, antilink,
- * antispam, antiword, common, gpp, gstatus
- *
- * Toggle settings are stored per-group in config/groupSettings.json.
- * Actual enforcement (detecting links, banned words, etc.) should be wired
- * into events/messages.js separately — these commands just manage the toggles.
- */
-
-const fs = require('fs');
-const path = require('path');
-
-const settingsPath = path.join(__dirname, '../config/groupSettings.json');
-
-function loadSettings() {
-  if (fs.existsSync(settingsPath)) {
-    return JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-  }
-  return {};
-}
-
-function saveSettings(settings) {
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-}
-
-function toggleSetting(jid, key, mode) {
-  const settings = loadSettings();
-  if (!settings[jid]) settings[jid] = {};
-  settings[jid][key] = mode === 'on';
-  saveSettings(settings);
-}
+const groupSettingsStore = require('../utils/groupSettingsStore');
+const { isOwner } = require('../utils/isOwner');
 
 function makeToggleCommand(name, settingKey, label, emoji) {
   return {
@@ -47,7 +16,7 @@ function makeToggleCommand(name, settingKey, label, emoji) {
         return sock.sendMessage(jid, { text: `❌ Usage: .${name} on  or  .${name} off` }, { quoted: msg });
       }
 
-      toggleSetting(jid, settingKey, mode);
+      groupSettingsStore.set(jid, settingKey, mode === 'on');
       await sock.sendMessage(jid, { text: `${emoji} ${label} turned ${mode}.` }, { quoted: msg });
     }
   };
@@ -55,25 +24,13 @@ function makeToggleCommand(name, settingKey, label, emoji) {
 
 module.exports = [
 
-  // ── ANTIFAKE — blocks numbers not matching certain country codes ────────────
   makeToggleCommand('antifake', 'antifake', 'Anti-fake number protection', '🛡️'),
-
-  // ── ANTIGM — anti group mentions spam ────────────────────────────────────────
   makeToggleCommand('antigm', 'antigm', 'Anti-group-mention spam protection', '🛡️'),
-
-  // ── ANTIGSTATUS — block @everyone-style group status spam ───────────────────
   makeToggleCommand('antigstatus', 'antigstatus', 'Anti-group-status spam protection', '🛡️'),
-
-  // ── ANTILINK — auto-remove messages containing links ─────────────────────────
   makeToggleCommand('antilink', 'antilink', 'Anti-link protection', '🔗'),
-
-  // ── ANTISPAM — rate-limit repeated messages ───────────────────────────────────
   makeToggleCommand('antispam', 'antispam', 'Anti-spam protection', '🚫'),
-
-  // ── ANTIWORD — block banned words ─────────────────────────────────────────────
   makeToggleCommand('antiword', 'antiword', 'Banned word filter', '🤬'),
 
-  // ── COMMON — shows current group settings summary ───────────────────────────
   {
     name: 'common',
     description: 'Show current group protection settings.',
@@ -83,7 +40,7 @@ module.exports = [
         return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
       }
 
-      const settings = loadSettings()[jid] || {};
+      const settings = groupSettingsStore.getAll(jid);
       const flag = (v) => v ? '✅ ON' : '❌ OFF';
 
       const text = `
@@ -102,7 +59,6 @@ module.exports = [
     }
   },
 
-  // ── GPP — Get group profile picture ──────────────────────────────────────────
   {
     name: 'gpp',
     description: "Get the group's profile picture.",
@@ -131,7 +87,6 @@ module.exports = [
     }
   },
 
-  // ── GSTATUS — post a replied photo/video directly into the group chat ────────
   {
     name: 'gstatus',
     aliases: ['gas', 'gps'],
@@ -161,8 +116,6 @@ module.exports = [
         const type = quoted.imageMessage ? 'image' : 'video';
         const caption = quoted[`${type}Message`]?.caption || '';
 
-        // Send straight into the group chat as a normal message —
-        // this is the "group status", distinct from the bot's personal WhatsApp status.
         await sock.sendMessage(jid, { [type]: media, caption }, { quoted: msg });
       } catch (e) {
         await sock.sendMessage(jid, { text: '❌ Failed to post: ' + e.message }, { quoted: msg });

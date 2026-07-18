@@ -1,19 +1,5 @@
-/**
- * commands/groupmembers.js
- * --------------------------
- * Group membership commands: invite, join, welcome, goodbye, unmute, amute, aunmute
- *
- * NOTE: 'add' intentionally lives only in commands/add.js — it used to
- * also be defined here, which silently overwrote the more capable
- * standalone version (reply support, already-a-member check) in the
- * command registry, since this file loaded after add.js.
- *
- * amute/aunmute schedule a GROUP-WIDE mute/unmute after a countdown
- * (e.g. .amute 50s, .aunmute 2m) — not a per-member mute. Scheduled with
- * setTimeout, so a bot restart before the timer fires cancels it
- * silently, same limitation as the existing .reminder command.
- */
 const { isBotAdmin, isSenderAdmin } = require('../utils/isAdmin');
+const groupSettingsStore = require('../utils/groupSettingsStore');
 
 function parseDuration(input) {
   const match = /^(\d+)\s*(s|sec|secs|m|min|mins|h|hr|hrs)?$/i.exec((input || '').trim());
@@ -57,7 +43,6 @@ async function checkAdminPerms(sock, msg) {
 
 module.exports = [
 
-  // ── INVITE ──────────────────────────────────────────────────────────────────
   {
     name: 'invite',
     description: 'Get the group invite link.',
@@ -78,7 +63,6 @@ module.exports = [
     }
   },
 
-  // ── JOIN ────────────────────────────────────────────────────────────────────
 {
   name: 'join',
   description: 'Make the bot join a group via invite link. Usage: .join <link> or reply .join',
@@ -87,7 +71,6 @@ module.exports = [
 
     let link = args[0];
 
-    // If no link was provided, try getting it from the replied message
     if (!link) {
       const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
@@ -101,7 +84,6 @@ module.exports = [
       }
     }
 
-    // Extract the WhatsApp invite link
     const match = link?.match(/https?:\/\/chat\.whatsapp\.com\/([A-Za-z0-9]+)/);
 
     if (!match) {
@@ -132,7 +114,6 @@ module.exports = [
   }
 },
 
-  // ── WELCOME (toggle) ────────────────────────────────────────────────────────
   {
     name: 'welcome',
     description: 'Toggle welcome messages for new members. Usage: .welcome on/off',
@@ -147,20 +128,11 @@ module.exports = [
         return sock.sendMessage(jid, { text: '❌ Usage: .welcome on  or  .welcome off' }, { quoted: msg });
       }
 
-      const fs = require('fs');
-      const path = require('path');
-      const settingsPath = path.join(__dirname, '../config/groupSettings.json');
-      let settings = {};
-      if (fs.existsSync(settingsPath)) settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-      if (!settings[jid]) settings[jid] = {};
-      settings[jid].welcome = mode === 'on';
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-
+      groupSettingsStore.set(jid, 'welcome', mode === 'on');
       await sock.sendMessage(jid, { text: `✅ Welcome messages turned ${mode}.` }, { quoted: msg });
     }
   },
 
-  // ── GOODBYE (toggle) ────────────────────────────────────────────────────────
   {
     name: 'goodbye',
     description: 'Toggle goodbye messages for leaving members. Usage: .goodbye on/off',
@@ -175,20 +147,11 @@ module.exports = [
         return sock.sendMessage(jid, { text: '❌ Usage: .goodbye on  or  .goodbye off' }, { quoted: msg });
       }
 
-      const fs = require('fs');
-      const path = require('path');
-      const settingsPath = path.join(__dirname, '../config/groupSettings.json');
-      let settings = {};
-      if (fs.existsSync(settingsPath)) settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-      if (!settings[jid]) settings[jid] = {};
-      settings[jid].goodbye = mode === 'on';
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-
+      groupSettingsStore.set(jid, 'goodbye', mode === 'on');
       await sock.sendMessage(jid, { text: `✅ Goodbye messages turned ${mode}.` }, { quoted: msg });
     }
   },
 
-  // ── UNMUTE (alias-friendly distinct from existing mute.js) ────────────────────
   {
     name: 'unmute',
     description: 'Unmute the group, allowing all members to send messages.',
@@ -207,7 +170,6 @@ module.exports = [
     }
   },
 
-  // ── AMUTE — schedule the group to mute after a delay ────────────────────────
   {
     name: 'amute',
     description: 'Schedule the group to be muted after a delay. Usage: .amute 50s | .amute 2m | .amute 1h',
@@ -241,7 +203,6 @@ module.exports = [
     }
   },
 
-  // ── AUNMUTE — schedule the group to unmute after a delay ─────────────────────
   {
     name: 'aunmute',
     description: 'Schedule the group to be unmuted after a delay. Usage: .aunmute 50s | .aunmute 2m | .aunmute 1h',

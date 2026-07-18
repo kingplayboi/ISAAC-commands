@@ -1,11 +1,4 @@
-/**
- * commands/groupstatus.js
- * --------------------------
- * Shows this group's per-group settings (antilink, welcome, etc.).
- * Usage: .groupstatus
- */
-const fs = require('fs');
-const path = require('path');
+const groupSettingsStore = require('../utils/groupSettingsStore');
 
 module.exports = {
   name: 'groupstatus',
@@ -17,11 +10,7 @@ module.exports = {
       return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
     }
 
-    const settingsPath = path.join(__dirname, '../config/groupSettings.json');
-    const allSettings = fs.existsSync(settingsPath)
-      ? JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
-      : {};
-    const settings = allSettings[jid] || {};
+    const settings = groupSettingsStore.getAll(jid);
 
     const onOff = (v) => (v ? '✅ ON' : '❌ OFF');
 
