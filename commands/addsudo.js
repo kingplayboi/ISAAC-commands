@@ -1,10 +1,3 @@
-/**
- * commands/addsudo.js
- * ---------------------
- * Grants a user sudo access to elevated (but not developer-level) commands.
- * Owner only.
- * Usage: .addsudo <number> (or reply to their message)
- */
 const { isOwner } = require('../utils/isOwner');
 const { addSudo } = require('../utils/isSudo');
 
