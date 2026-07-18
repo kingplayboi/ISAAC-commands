@@ -1,12 +1,3 @@
-/**
- * commands/smeme.js
- * --------------------
- * Add top/bottom meme text to a replied image and send it as a sticker.
- * Usage: reply to an image with .smeme top text|bottom text
- * Either side can be left blank: .smeme |bottom only   or   .smeme top only|
- *
- * Requires: npm install jimp wa-sticker-formatter
- */
 const Jimp = require('jimp');
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
