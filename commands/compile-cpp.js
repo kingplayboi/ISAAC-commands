@@ -1,14 +1,3 @@
-/**
- * commands/compile-cpp.js
- * -------------------------
- * Compiles a short C++ snippet with clang++ and runs it, returning stdout.
- * Requires: pkg install clang
- * Command name is "compile-c++" to match the requested usage syntax.
- *
- * Usage:
- *   .compile-c++ #include <iostream>\nint main(){std::cout<<"hi";return 0;}
- */
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
