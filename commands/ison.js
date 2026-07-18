@@ -1,11 +1,3 @@
-/**
- * commands/ison.js
- * ------------------
- * Checks if a phone number is registered on WhatsApp, and if so,
- * fetches their username, about/status, last seen (best-effort,
- * depends on their privacy settings), and profile picture.
- * Usage: .ison 254754574642
- */
 const https = require('https');
 
 function downloadBuffer(url) {
