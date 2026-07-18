@@ -1,20 +1,3 @@
-/**
- * commands/game.js
- * ----------------
- * Two simple games in one command:
- *
- *   !game number        - starts a "guess the number" game (1-50). Players
- *                          reply in the chat with plain numbers to guess;
- *                          guessing is handled in events/messages.js since
- *                          it needs to intercept normal (non-!) messages.
- *   !game trivia         - fetches a random trivia question from the free
- *                          Open Trivia DB API and posts it with lettered
- *                          options; answer with !answer A/B/C/D.
- *
- * Game state is kept in memory (per chat) in the exported `activeGames`
- * map so other files (like the answer-checking logic) can read it.
- */
-
 const activeGames = new Map();
 
 async function startNumberGame(sock, msg, jid) {
