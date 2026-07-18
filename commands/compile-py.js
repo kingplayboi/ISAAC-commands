@@ -1,14 +1,3 @@
-/**
- * commands/compile-py.js
- * ------------------------
- * Runs a short Python snippet and returns its stdout/stderr output.
- * Requires: pkg install python
- *
- * Usage:
- *   .compile-py print(1 + 1)
- *   .compile-py for i in range(5): print(i)
- */
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
