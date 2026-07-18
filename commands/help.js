@@ -1,14 +1,3 @@
-/**
- * commands/help.js
- * ----------------
- * Lists every command currently loaded by the bot, along with its
- * description. Since commands are loaded dynamically, this list always
- * stays in sync — add a new command file and it automatically shows up
- * here without any extra work.
- *
- * Usage: !help
- */
-
 const config = require('../config/config');
 
 module.exports = {
