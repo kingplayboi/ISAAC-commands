@@ -4,7 +4,6 @@ module.exports = {
   description: 'Makes the bot leave a group using its invite link (Owner only).',
 
   async execute(sock, msg, args) {
-    // Same owner check used by update.js
     if (!msg.key.fromMe) {
       return sock.sendMessage(
         msg.key.remoteJid,
