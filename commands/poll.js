@@ -1,10 +1,3 @@
-/**
- * commands/poll.js
- * ------------------
- * Sends a poll in the group.
- *
- * Usage: .poll Question? | Option 1 | Option 2 | Option 3
- */
 module.exports = {
   name: 'poll',
   description: 'Sends a poll with a question and up to 12 options.',
