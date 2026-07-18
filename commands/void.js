@@ -59,6 +59,7 @@ End some responses naturally with things like:
 
 🔥 Powered by ISAAC-TECH
 👻 Running inside ISAAC-MD
+😡 Expect me always 
 🤖 VOID operational
 🐛 Debug mode activated
 `;
@@ -82,10 +83,7 @@ Usage:
 .void <question>
 
 Examples:
-.void good morning
 .void who are you
-.void explain Linux permissions
-.void write a WhatsApp command
 .void fix this Node.js error`
         },
         { quoted: msg }
