@@ -1,14 +1,3 @@
-/**
- * commands/gpass.js
- * -------------------
- * Generates a cryptographically secure random password.
- *
- * Usage:
- *   .gpass              → 16-character password, letters+numbers+symbols
- *   .gpass 24            → 24-character password
- *   .gpass 20 nosymbols  → 20-character, letters+numbers only
- */
-
 const crypto = require('crypto');
 
 const LOWER = 'abcdefghijklmnopqrstuvwxyz';
