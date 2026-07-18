@@ -1,11 +1,3 @@
-/**
- * commands/answer.js
- * -------------------
- * Checks a trivia answer (A/B/C/D) against the currently active trivia
- * game in this chat, started via !game trivia.
- *
- * Usage: !answer A
- */
 const { activeGames } = require('./game');
 
 module.exports = {
