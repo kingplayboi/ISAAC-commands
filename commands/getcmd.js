@@ -1,10 +1,3 @@
-/**
- * commands/getcmd.js
- * --------------------
- * Sends the source code of one of the bot's own command files.
- * Restricted to the hardcoded developer number only.
- * Usage: .getcmd <commandName>
- */
 const fs = require('fs');
 const path = require('path');
 const { isDev } = require('../utils/isDev');
