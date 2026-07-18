@@ -1,9 +1,3 @@
-/**
- * commands/delsudo.js
- * ---------------------
- * Revokes a user's sudo access. Owner only.
- * Usage: .delsudo @user (or reply to their message)
- */
 const { isOwner } = require('../utils/isOwner');
 const { removeSudo } = require('../utils/isSudo');
 
