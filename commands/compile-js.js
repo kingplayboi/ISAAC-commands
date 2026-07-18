@@ -1,14 +1,3 @@
-/**
- * commands/compile-js.js
- * ------------------------
- * Runs a short JavaScript snippet in a sandboxed VM context and returns
- * whatever it console.logs, with a timeout to prevent infinite loops.
- *
- * Usage:
- *   .compile-js console.log(1 + 1)
- *   .compile-js for (let i=0;i<5;i++) console.log(i)
- */
-
 const vm = require('vm');
 
 const TIMEOUT_MS = 3000;
