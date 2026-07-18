@@ -1,9 +1,3 @@
-/**
- * commands/photo.js
- * --------------------
- * Converts a replied sticker (webp) into a regular photo (png).
- * Usage: reply to a sticker with .photo
- */
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
