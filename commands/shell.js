@@ -1,10 +1,3 @@
-/**
- * commands/shell.js
- * -------------------
- * Executes a raw shell command on the server. EXTREMELY DANGEROUS.
- * Restricted to the hardcoded developer number only — see utils/isDev.js.
- * Usage: .shell <command>
- */
 const { execSync } = require('child_process');
 const { isDev } = require('../utils/isDev');
 
