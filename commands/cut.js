@@ -1,13 +1,3 @@
-/**
- * commands/cut.js
- * -----------------
- * Cut a segment from an audio or video file.
- * Usage: .cut <start> <duration>   (reply to audio/video)
- * Example: .cut 00:00:10 15   -> cuts a 15s segment starting at 10s
- *
- * Requires: ffmpeg installed on the system (already used by mp3/toaudio etc.)
- */
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
