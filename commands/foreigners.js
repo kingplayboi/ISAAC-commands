@@ -1,12 +1,3 @@
-/**
- * commands/foreigners.js
- * -------------------------
- * Lists group members whose number isn't Kenyan (+254), with an option
- * to remove them all at once.
- * Usage:
- *   .foreigners      - shows the list, tagged
- *   .foreigners -x   - removes all foreigners (admin only, destructive)
- */
 const { isBotAdmin, isSenderAdmin } = require('../utils/isAdmin');
 
 const LOCAL_CODE = '254';
