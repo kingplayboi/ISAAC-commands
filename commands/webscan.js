@@ -1,11 +1,3 @@
-/**
- * commands/webscan.js
- * --------------------
- * Scans a website and gives basic details (status, headers, server, etc.)
- *
- * Usage: .webscan https://google.com
- */
-
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
