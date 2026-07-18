@@ -1,24 +1,3 @@
-/**
- * commands/add.js
- * -----------------
- * Adds a participant to the group by phone number, or by replying to
- * their message. Admin-only.
- *
- * Usage: .add 254754574642
- *    or: reply to their message with .add
- *
- * NOTE ON LID vs PHONE-NUMBER JIDs: a reply's contextInfo.participant is
- * often a @lid JID (WhatsApp's newer anonymized ID), but
- * groupParticipantsUpdate's 'add' action needs the classic phone-number
- * JID (@s.whatsapp.net) — passing a @lid there gets rejected outright as
- * "bad-request" by WhatsApp, regardless of membership. contextInfo also
- * carries a phone-number counterpart (participantAlt / participantPn
- * depending on the message shape), which we prefer whenever present.
- *
- * If a direct add fails (commonly because the target's privacy settings
- * block being added by non-contacts), we fall back to DMing them a
- * group invite link instead of just erroring out.
- */
 const { isBotAdmin, isSenderAdmin } = require('../utils/isAdmin');
 
 module.exports = {
