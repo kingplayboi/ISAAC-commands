@@ -1,13 +1,3 @@
-/**
- * commands/carbon.js
- * --------------------
- * Turns a code snippet into a styled code image, similar to carbon.now.sh,
- * using the free public Carbonara rendering API.
- *
- * Usage:
- *   .carbon const x = 1;
- */
-
 const https = require('https');
 
 function httpsPostJson(hostname, reqPath, body) {
