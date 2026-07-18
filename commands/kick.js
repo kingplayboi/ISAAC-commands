@@ -1,15 +1,3 @@
-/**
- * commands/kick.js
- * ----------------
- * Kick one or more members from a group.
- *
- * Supports:
- * • .kick (reply to any message)
- * • .kick @user
- * • .kick @user1 @user2 @user3
- * • Reply + mentions together
- */
-
 module.exports = {
   name: 'kick',
   description: 'Kick one or more group members (admin only).',
