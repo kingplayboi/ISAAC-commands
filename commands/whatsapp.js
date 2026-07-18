@@ -1,21 +1,3 @@
-/**
- * commands/whatsapp.js
- * ---------------------
- * WhatsApp commands: poll, react, del, setstatus, status, online, caption, doc
- *
- * Usage:
- *   .poll Question | Option1 | Option2
- *   .react 😂          (reply to a message)
- *   .del               (reply to a message)
- *   .setstatus <text>
- *   .status
- *   .online
- *   .caption <text>    (reply to media)
- *   .doc               (reply to media)
- *   .clear             (clears this entire chat, bot's own view)
- *   .save1             (reply to a status)
- */
-
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 module.exports = [
