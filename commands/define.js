@@ -1,8 +1,3 @@
-/**
- * commands/define.js
- * Get word definitions from Free Dictionary API (no key needed)
- */
-
 module.exports = {
   name: 'define',
   description: 'Get the definition of a word. Usage: .define <word>',
