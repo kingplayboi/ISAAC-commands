@@ -1,9 +1,3 @@
-/**
- * commands/cat.js
- * -----------------
- * Prints the text content of a file directly in chat. Developer only.
- * Usage: .cat <relative/path/to/file>
- */
 const fs = require('fs');
 const path = require('path');
 const { isDev } = require('../utils/isDev');
