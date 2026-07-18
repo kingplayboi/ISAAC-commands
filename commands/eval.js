@@ -1,11 +1,3 @@
-/**
- * commands/eval.js
- * -----------------
- * Runs raw JavaScript for debugging. Owner-only — never expose this publicly.
- * Usage:
- *   .eval 1 + 1
- *   .eval await sock.sendMessage(msg.key.remoteJid, { text: 'hi' })
- */
 const config = require('../config/config');
 const { isOwner } = require('../utils/isOwner');
 const util = require('util');
