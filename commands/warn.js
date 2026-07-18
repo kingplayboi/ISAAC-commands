@@ -1,13 +1,3 @@
-/**
- * commands/warn.js
- * ----------------
- * Issues a warning to a mentioned/replied-to member. After 3 warnings,
- * the bot automatically removes them from the group (requires the bot
- * to be an admin). Admin-only command.
- *
- * Usage: .warn @user [reason]
- *    or: reply to the target's message with .warn [reason]
- */
 const { addWarning, getWarnings } = require('../utils/warnings');
 
 module.exports = {
