@@ -1,10 +1,3 @@
-/**
- * commands/open.js
- * ------------------
- * Reopens the group so all members can send messages. Admin-only.
- *
- * Usage: .open
- */
 module.exports = {
   name: 'open',
   description: 'Reopens the group for all members to message (admin only).',
