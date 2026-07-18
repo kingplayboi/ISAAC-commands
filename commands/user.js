@@ -1,13 +1,3 @@
-/**
- * commands/user.js
- * ----------------
- * Shows basic info about the message sender: their phone number (or
- * WhatsApp LID if a real number isn't available — WhatsApp's privacy
- * system sometimes hides the real number behind an internal ID), push
- * name, and profile picture if one is available.
- *
- * Usage: !user
- */
 module.exports = {
   name: 'user',
   description: 'Shows your WhatsApp number, name, and profile picture.',
