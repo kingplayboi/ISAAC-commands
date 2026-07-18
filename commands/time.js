@@ -1,11 +1,3 @@
-/**
- * commands/time.js
- * -------------------
- * Find the current time by timezone name (e.g. Africa/Nairobi) or a
- * common city/country shortcode.
- * Usage: .time <timezone or place>
- */
-
 const SHORTCUTS = {
   nairobi: 'Africa/Nairobi',
   kenya: 'Africa/Nairobi',
