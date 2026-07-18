@@ -1,9 +1,3 @@
-/**
- * commands/admin.js
- * --------------------
- * Lists the current group's admins.
- * Usage: .admin
- */
 module.exports = {
   name: 'admin',
   description: "Lists the group's admins.",
