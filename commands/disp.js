@@ -1,9 +1,3 @@
-/**
- * commands/disp.js
- * -------------------
- * Sets the group's disappearing messages duration. Admin only.
- * Usage: .disp-1 (24h) | .disp-7 (7 days) | .disp-90 (90 days) | .disp-off
- */
 const { isBotAdmin, isSenderAdmin } = require('../utils/isAdmin');
 
 async function setEphemeral(sock, msg, seconds, label) {
