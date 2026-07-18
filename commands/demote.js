@@ -1,12 +1,3 @@
-/**
- * commands/demote.js
- * ------------------
- * Demotes a mentioned/replied-to admin back to a regular member.
- * Admin-only.
- *
- * Usage: !demote @user
- *    or: reply to the target's message with !demote
- */
 module.exports = {
   name: 'demote',
   description: 'Demotes a mentioned admin back to a regular member (admin only).',
