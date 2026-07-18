@@ -1,17 +1,3 @@
-/**
- * commands/gauth.js
- * -------------------
- * Manage Google Authentication (Authenticate, Import, Logout, Status).
- * Usage:
- *   .gauth authenticate   -> get an auth URL
- *   .gauth import <code>  -> exchange code for tokens
- *   .gauth logout         -> remove stored tokens
- *   .gauth status         -> show auth status
- *
- * Requires: npm install googleapis
- * Env vars (.env): GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
- */
-
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
