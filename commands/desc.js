@@ -1,10 +1,3 @@
-/**
- * commands/desc.js
- * -----------------
- * Changes the group's description. Admin-only.
- *
- * Usage: .desc New description text here
- */
 module.exports = {
   name: 'desc',
   description: "Changes the group's description (admin only).",
