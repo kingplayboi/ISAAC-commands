@@ -1,11 +1,3 @@
-/**
- * commands/joke.js
- * ----------------
- * Fetches a random joke from a free public API (no key required) and
- * sends it to the chat.
- *
- * Usage: !joke
- */
 module.exports = {
   name: 'joke',
   description: 'Sends a random joke.',
