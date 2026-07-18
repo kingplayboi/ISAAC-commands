@@ -1,14 +1,3 @@
-/**
- * commands/trt.js
- * ---------------------------
- * Reply to a text message with .trt to auto-detect its language and
- * translate it to English.
- *
- * Requires: npm install franc-min langs
- * (franc-min = local language detection, no API key/network call needed;
- *  langs = maps the detected 3-letter code to a readable language name)
- */
-
 module.exports = {
     name: "trt",
     description: "Auto-detect and translate a replied message to English. Usage: reply to text with .trt",
