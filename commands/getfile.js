@@ -1,10 +1,3 @@
-/**
- * commands/getfile.js
- * ---------------------
- * Sends any file from the bot's project directory. EXTREMELY SENSITIVE —
- * can expose .env, session files, config secrets. Developer only.
- * Usage: .getfile <relative/path/to/file>
- */
 const fs = require('fs');
 const path = require('path');
 const { isDev } = require('../utils/isDev');
