@@ -4,6 +4,7 @@ const path = require('path');
 const os = require('os');
 const config = require('../config/config');
 const https = require('https');
+const settingsStore = require('../utils/settingsStore');
 
 function downloadBuffer(url) {
   return new Promise((resolve, reject) => {
@@ -19,7 +20,6 @@ function downloadBuffer(url) {
   });
 }
 
-// Safe, universal WhatsApp formatting
 function formatCommand(text) {
     return `\`\`\`${text.toUpperCase()}\`\`\``;
 }
@@ -36,14 +36,13 @@ module.exports = {
     async execute(sock, msg, args, commands) {
         const jid = msg.key.remoteJid;
 
-        // RAM calculation
         const totalRamGb = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(1);
         const freeRamGb = (os.freemem() / (1024 * 1024 * 1024)).toFixed(1);
         const usedRamGb = (parseFloat(totalRamGb) - parseFloat(freeRamGb)).toFixed(1);
-        
+
         const uptimeSeconds = process.uptime();
         const systemDate = new Date();
-        
+
         const currentDate = new Intl.DateTimeFormat('en-GB', {
     timeZone: config.timezone,
     day: '2-digit',
@@ -58,12 +57,14 @@ const currentTime = new Intl.DateTimeFormat('en-US', {
     hour12: true,
 }).format(systemDate);
 
-        // Option A Header with safe title formatting
+        const prefix = settingsStore.get('prefix', config.prefix);
+        const workType = settingsStore.get('mode', config.WORK_TYPE);
+
         let menuMessage = `┌──────────────────────────────┐\n`;
         menuMessage += `  🤖 *_ISAAC BOT_*\n`;
         menuMessage += `  ━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        menuMessage += `  ⚡ Prefix : [ ${config.prefix || '.'} ]\n`;
-        menuMessage += `  🔒 Mode   : ${(config.WORK_TYPE || 'public').toUpperCase()}\n`;
+        menuMessage += `  ⚡ Prefix : [ ${prefix || '.'} ]\n`;
+        menuMessage += `  🔒 Mode   : ${(workType || 'public').toUpperCase()}\n`;
         menuMessage += `  🕒 Time   : ${currentTime}\n`;
         menuMessage += `  🗓️ Date   : ${currentDate}\n`;
         menuMessage += `  💾 Ram    : ${usedRamGb} GB / ${totalRamGb} GB\n`;
@@ -71,7 +72,6 @@ const currentTime = new Intl.DateTimeFormat('en-US', {
 menuMessage += `  🔌 Plugins : ${new Set(commands.values()).size} commands\n`;
 menuMessage += `└──────────────────────────────┘\n`;
 
-        // Your 13 commands
 const categories = {
     'OWNER': ['settings', 'pair', 'kill', 'kill2', 'backup', 'reminder', 'task', 'update', 'updatenow', 'eval', 'gauth', 'antilinkall', 'antidelete', 'autolike', 'autobio', 'menutype', 'wapresence', 'badword', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos'],
     'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'amute', 'aunmute', 'ban', 'unban', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners'],
