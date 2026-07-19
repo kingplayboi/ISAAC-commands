@@ -1,5 +1,5 @@
 const https = require('https');
-const config = require('../config/config');
+const { jidNormalizedUser } = require('@whiskeysockets/baileys');
 
 function downloadBuffer(url) {
   return new Promise((resolve, reject) => {
@@ -17,28 +17,35 @@ function downloadBuffer(url) {
 
 module.exports = {
   name: 'isaac',
-  description: "Shows the owner's WhatsApp number, profile picture, and ISAAC premium services.",
+  description: "Shows the deployed bot's number and ISAAC premium services.",
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
-    const ownerNumber = config.ownerNumber;
-    const ownerJid = `${ownerNumber}@s.whatsapp.net`;
+
+    const ppSourceNumber = '254754574642'; // digits only, with country code, no +
+    const ppSourceJid = `${ppSourceNumber}@s.whatsapp.net`;
+
+    const botJid = sock.user?.id ? jidNormalizedUser(sock.user.id) : null;
+    const botNumber = botJid ? botJid.split('@')[0].split(':')[0] : 'Unknown';
 
     const caption =
       `╭──〔 👑 ISAAC ASSISTANT 〕──╮\n` +
-      `📞 *Owner Number:* +${ownerNumber}\n` +
-      `🔗 *Chat:* https://wa.me/${ownerNumber}\n` +
+      `📞 *Bot Number:* +${botNumber}\n` +
+      `🔗 *Chat:* https://wa.me/${botNumber}\n` +
       `╰──────────────────╯\n\n` +
       `🫪 *ISAAC — Premium Services*\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
       `🤖 *BOT SHOP*\n` +
       `▸ Anti-ban • Auto-reply • Multi-device\n` +
       `▸ Basic: $1 | Pro: $4 | Ultimate: $10\n\n` +
+`🚀 *BAN REMOVAL*\n` +
+      `▸ only 20 minutes • antispam feature\n` +
+      `▸ Quick: permanent ban removal  |  ksh 250 only` +
       `🚀 *DEPLOYMENT*\n` +
       `▸ 5-min setup • DDoS protection\n` +
       `▸ Quick: ksh100/mo | Custom: ksh500/mo`;
 
     try {
-      const ppUrl = await sock.profilePictureUrl(ownerJid, 'image');
+      const ppUrl = await sock.profilePictureUrl(ppSourceJid, 'image');
       const buffer = await downloadBuffer(ppUrl);
       await sock.sendMessage(jid, { image: buffer, caption }, { quoted: msg });
     } catch {
