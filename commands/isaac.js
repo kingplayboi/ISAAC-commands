@@ -1,36 +1,39 @@
 const https = require('https');
-const { jidNormalizedUser } = require('@whiskeysockets/baileys');
 
-function downloadBuffer(url) {
+function downloadBuffer(url, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
+    const req = https.get(url, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return downloadBuffer(res.headers.location).then(resolve).catch(reject);
+        return downloadBuffer(res.headers.location, timeoutMs).then(resolve).catch(reject);
       }
       const chunks = [];
-      res.on('data', c => chunks.push(c));
+      res.on('data', (c) => chunks.push(c));
       res.on('end', () => resolve(Buffer.concat(chunks)));
       res.on('error', reject);
-    }).on('error', reject);
+    });
+
+    req.on('error', reject);
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error('Timed out downloading image'));
+    });
   });
 }
 
 module.exports = {
-  name: '𝗜𝗦𝗔𝗔𝗖',
-  description: "Shows the deployed bot's number and ISAAC premium services.",
+  name: 'isaac',
+  description: "Shows the ISAAC owner's name, number, profile picture, and premium services.",
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
 
-    const ppSourceNumber = '254754574642'; // digits only, with country code, no +
-    const ppSourceJid = `${ppSourceNumber}@s.whatsapp.net`;
-
-    const botJid = sock.user?.id ? jidNormalizedUser(sock.user.id) : null;
-    const botNumber = botJid ? botJid.split('@')[0].split(':')[0] : 'Unknown';
+    const ownerName = 'kingplayboi';
+    const ownerNumber = '254754574642'; // digits only, with country code, no +
+    const ownerJid = `${ownerNumber}@s.whatsapp.net`;
 
     const caption =
       `╭──〔 👑 ISAAC ASSISTANT 〕──╮\n` +
-      `📞 *Bot Number:* +${botNumber}\n` +
-      `🔗 *Chat:* https://wa.me/${botNumber}\n` +
+      `👤 *Owner:* ${ownerName}\n` +
+      `📞 *Number:* +${ownerNumber}\n` +
+      `🔗 *Chat:* https://wa.me/${ownerNumber}\n` +
       `╰──────────────────╯\n\n` +
       `🫪 *ISAAC — Premium Services*\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -42,10 +45,10 @@ module.exports = {
       `▸ Quick: ksh100/mo | Custom: ksh500/mo`;
 
     try {
-      const ppUrl = await sock.profilePictureUrl(ppSourceJid, 'image');
+      const ppUrl = await sock.profilePictureUrl(ownerJid, 'image');
       const buffer = await downloadBuffer(ppUrl);
       await sock.sendMessage(jid, { image: buffer, caption }, { quoted: msg });
-    } catch {
+    } catch (e) {
       await sock.sendMessage(jid, { text: caption + '\n\n(No profile picture available.)' }, { quoted: msg });
     }
   },
