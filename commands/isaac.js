@@ -16,7 +16,7 @@ function downloadBuffer(url) {
 }
 
 module.exports = {
-  name: 'isaac',
+  name: '𝗜𝗦𝗔𝗔𝗖',
   description: "Shows the deployed bot's number and ISAAC premium services.",
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
@@ -37,9 +37,6 @@ module.exports = {
       `🤖 *BOT SHOP*\n` +
       `▸ Anti-ban • Auto-reply • Multi-device\n` +
       `▸ Basic: $1 | Pro: $4 | Ultimate: $10\n\n` +
-`🚀 *BAN REMOVAL*\n` +
-      `▸ only 20 minutes • antispam feature\n` +
-      `▸ Quick: permanent ban removal  |  ksh 250 only` +
       `🚀 *DEPLOYMENT*\n` +
       `▸ 5-min setup • DDoS protection\n` +
       `▸ Quick: ksh100/mo | Custom: ksh500/mo`;
