@@ -13,9 +13,11 @@ module.exports = {
         const jid = msg.key.remoteJid;
 
         let antilinkOn = false;
-        if (jid.endsWith('@g.us')) {
-            antilinkOn = groupSettingsStore.get(jid, 'antilink', false);
-        }
+    let antigmMode = 'N/A';
+    if (jid.endsWith('@g.us')) {
+        antilinkOn = groupSettingsStore.get(jid, 'antilink', false);
+        antigmMode = groupSettingsStore.get(jid, 'antigm', 'off').toUpperCase();
+    }
 
         const text = `╔══════════════════════╗
 ║     ⚙️  BOT SETTINGS
@@ -23,6 +25,7 @@ module.exports = {
 
 *🔒 Security*
 ┣ AntiLink: ${onOff(antilinkOn)}
+┣ AntiGM: ${antigmMode}
 ┣ AntiLinkAll: ${onOff(settingsStore.get('antilinkall', false))}
 ┣ AntiDelete: ${onOff(settingsStore.get('antidelete', false))}
 ┣ AntiCall: ${onOff(settingsStore.get('anticall', false))}
