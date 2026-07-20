@@ -14,20 +14,7 @@ module.exports = {
     const code = args.join(' ');
 
     if (!code) {
-      return sock.sendMessage(
-        jid,
-        {
-          text:
-            '❌ Provide code to run.\n\nUsage: *.eval 1 + 1*\n\nShortcuts:\n' +
-            '*.eval api* — current API base\n' +
-            '*.eval settings* — all bot-wide settings\n' +
-            '*.eval uptime* — process uptime + memory\n' +
-            '*.eval version* — Node/Baileys/package versions\n' +
-            '*.eval commands* — loaded command count/list\n' +
-            '*.eval env* — environment variable names (no values)',
-        },
-        { quoted: msg }
-      );
+      return sock.sendMessage(jid, { text: '❌ Provide code to run.\n\nUsage: *.eval 1 + 1*' }, { quoted: msg });
     }
 
     const keyword = args[0]?.toLowerCase();
