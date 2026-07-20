@@ -25,7 +25,24 @@ function makeToggleCommand(name, settingKey, label, emoji) {
 module.exports = [
 
   makeToggleCommand('antifake', 'antifake', 'Anti-fake number protection', '🛡️'),
-  makeToggleCommand('antigm', 'antigm', 'Anti-group-mention spam protection', '🛡️'),
+  {
+    name: 'antigm',
+    description: 'Anti-group-mention protection. Usage: .antigm off/on/kick/warn',
+    async execute(sock, msg, args) {
+      const jid = msg.key.remoteJid;
+      if (!jid.endsWith('@g.us')) {
+        return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+      }
+
+      const mode = args[0]?.toLowerCase();
+      if (!['off', 'on', 'kick', 'warn'].includes(mode)) {
+        return sock.sendMessage(jid, { text: '❌ Usage: .antigm off / on / kick / warn' }, { quoted: msg });
+      }
+
+      groupSettingsStore.set(jid, 'antigm', mode);
+      await sock.sendMessage(jid, { text: `🛡️ Antigm set to *${mode.toUpperCase()}*.` }, { quoted: msg });
+    }
+  },
   makeToggleCommand('antigstatus', 'antigstatus', 'Anti-group-status spam protection', '🛡️'),
   makeToggleCommand('antilink', 'antilink', 'Anti-link protection', '🔗'),
   makeToggleCommand('antispam', 'antispam', 'Anti-spam protection', '🚫'),
