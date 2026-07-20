@@ -25,6 +25,7 @@ function makeToggleCommand(name, settingKey, label, emoji) {
 module.exports = [
 
   makeToggleCommand('antifake', 'antifake', 'Anti-fake number protection', '🛡️'),
+
   {
     name: 'antigm',
     description: 'Anti-group-mention protection. Usage: .antigm off/on/kick/warn',
@@ -43,8 +44,27 @@ module.exports = [
       await sock.sendMessage(jid, { text: `🛡️ Antigm set to *${mode.toUpperCase()}*.` }, { quoted: msg });
     }
   },
+
+  {
+    name: 'antilink',
+    description: 'Anti-link protection. Usage: .antilink off/on/kick/warn (on = delete only, warn = delete + warn, kick = delete + kick)',
+    async execute(sock, msg, args) {
+      const jid = msg.key.remoteJid;
+      if (!jid.endsWith('@g.us')) {
+        return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+      }
+
+      const mode = args[0]?.toLowerCase();
+      if (!['off', 'on', 'kick', 'warn'].includes(mode)) {
+        return sock.sendMessage(jid, { text: '❌ Usage: .antilink off / on / kick / warn' }, { quoted: msg });
+      }
+
+      groupSettingsStore.set(jid, 'antilink', mode);
+      await sock.sendMessage(jid, { text: `🔗 Antilink set to *${mode.toUpperCase()}*.` }, { quoted: msg });
+    }
+  },
+
   makeToggleCommand('antigstatus', 'antigstatus', 'Anti-group-status spam protection', '🛡️'),
-  makeToggleCommand('antilink', 'antilink', 'Anti-link protection', '🔗'),
   makeToggleCommand('antispam', 'antispam', 'Anti-spam protection', '🚫'),
   makeToggleCommand('antiword', 'antiword', 'Banned word filter', '🤬'),
 
@@ -62,11 +82,11 @@ module.exports = [
 
       const text = `
 ╭──〔 🛡️ GROUP SETTINGS 〕──╮
-🔗 Antilink: ${flag(settings.antilink)}
+🔗 Antilink: ${settings.antilink ? String(settings.antilink).toUpperCase() : '❌ OFF'}
 🚫 Antispam: ${flag(settings.antispam)}
 🤬 Antiword: ${flag(settings.antiword)}
 🛡️ Antifake: ${flag(settings.antifake)}
-🛡️ Antigm: ${flag(settings.antigm)}
+🛡️ Antigm: ${settings.antigm ? String(settings.antigm).toUpperCase() : '❌ OFF'}
 🛡️ Antigstatus: ${flag(settings.antigstatus)}
 👋 Welcome: ${flag(settings.welcome)}
 👋 Goodbye: ${flag(settings.goodbye)}
