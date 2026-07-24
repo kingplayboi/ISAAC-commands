@@ -6,7 +6,10 @@ module.exports = {
   description: 'Shows how long the bot has been running, with an audio clip.',
   async execute(sock, msg) {
     console.log("[UPTIME] execute started");
-    const jid = msg.key.remoteJid;
+    const rawJid = msg.key.remoteJid;
+const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
+  ? msg.key.remoteJidAlt
+  : rawJid;
 
     const uptime = process.uptime();
     const days = Math.floor(uptime / 86400);
