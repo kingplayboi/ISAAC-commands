@@ -1,13 +1,3 @@
-/**
- * commands/uptime.js
- * --------------------
- * Shows how long the bot has been running, followed by a short audio
- * clip (sent as two messages back-to-back, since WhatsApp doesn't
- * support attaching text to an audio message).
- *
- * Usage: .uptime
- */
-
 const fs = require('fs');
 const path = require('path');
 
@@ -15,6 +5,7 @@ module.exports = {
   name: 'uptime',
   description: 'Shows how long the bot has been running, with an audio clip.',
   async execute(sock, msg) {
+    console.log("[UPTIME] execute started");
     const jid = msg.key.remoteJid;
 
     const uptime = process.uptime();
