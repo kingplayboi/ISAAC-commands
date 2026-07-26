@@ -13,9 +13,9 @@ const execFileAsync = promisify(execFile);
 const { KEITH_BASE } = require('../config/apis');
 const API = KEITH_BASE;
 
-const ACR_HOST = process.env.ACR_HOST;
-const ACR_ACCESS_KEY = process.env.ACR_ACCESS_KEY;
-const ACR_ACCESS_SECRET = process.env.ACR_ACCESS_SECRET;
+const ACR_HOST = process.env.ACR_HOST || 'identify-us-west-2.acrcloud.com';
+const ACR_ACCESS_KEY = process.env.ACR_ACCESS_KEY || '7ca523c975921e8b70c6f0a5e252b884';
+const ACR_ACCESS_SECRET = process.env.ACR_ACCESS_SECRET || 'lKC2a0lMI6wtVcvjfQc3onuqjMkaqSenzZLXDKLI';
 
 function extractMediaTarget(msg) {
   const m = msg.message;
