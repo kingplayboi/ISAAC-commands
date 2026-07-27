@@ -1,16 +1,4 @@
-/**
- * commands/kill.js
- * -----------------
- * Removes ALL other members from the group, effectively "killing" it.
- * Extremely destructive — requires typing .kill confirm to actually run.
- * Restricted to the bot owner only. The bot itself must also be a
- * group admin to actually remove members.
- *
- * Usage:
- *   .kill            - shows a warning and asks for confirmation
- *   .kill confirm    - actually removes everyone (except the bot and the sender)
- */
-const { isBotAdmin, getBotIdentifiers } = require('../utils/isAdmin');
+onst { isBotAdmin, getBotIdentifiers } = require('../utils/isAdmin');
 const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
