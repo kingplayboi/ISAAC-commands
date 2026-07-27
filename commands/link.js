@@ -1,10 +1,3 @@
-/**
- * commands/link.js
- * ----------------
- * Sends the group's invite link. Admin-only.
- *
- * Usage: .link
- */
 module.exports = {
   name: 'link',
   description: "Sends the group's invite link (admin only).",
