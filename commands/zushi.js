@@ -1,18 +1,3 @@
-/**
- * commands/zushi.js
- * --------------------
- * Allow specific commands to be used by non-admins/non-owner in this chat,
- * overriding the default owner/admin-only restriction on those commands.
- * Usage:
- *   .zushi add <command>      -> allow a command for everyone in this chat
- *   .zushi remove <command>   -> revoke it
- *   .zushi list               -> show allowed commands for this chat
- *
- * NOTE: your command dispatcher/permission check needs to consult
- * config/allowedCommands.json for the current chat before blocking a
- * restricted command, for this to actually take effect.
- */
-
 const fs = require('fs');
 const path = require('path');
 
