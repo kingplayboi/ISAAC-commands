@@ -1,11 +1,3 @@
-/**
- * commands/revoke.js
- * -------------------
- * Revokes and regenerates the group's invite link. Admin-only.
- * Anyone with the old link will no longer be able to join.
- *
- * Usage: .revoke
- */
 module.exports = {
   name: 'revoke',
   description: "Revokes and regenerates the group's invite link (admin only).",
