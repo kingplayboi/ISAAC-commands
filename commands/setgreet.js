@@ -1,15 +1,3 @@
-/**
- * commands/setgreet.js
- * -----------------------
- * Set a personalized greeting (welcome) message for this group.
- * Usage: .setgreet <message>
- * Placeholders you can use in the message: {user} {group}
- *
- * Pairs with the existing .welcome toggle — your welcome-event handler
- * should read config/greetings.json for this text and replace the
- * placeholders when a new member joins.
- */
-
 const fs = require('fs');
 const path = require('path');
 
