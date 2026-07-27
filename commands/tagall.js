@@ -1,12 +1,3 @@
-/**
- * commands/tagall.js
- * ------------------
- * Mentions every member of the group in one message. Useful for
- * announcements. Restricted to admins so it can't be used to spam the
- * group repeatedly.
- *
- * Usage: .tagall [optional message]
- */
 module.exports = {
   name: 'tagall',
   description: 'Mentions every group member (admin only).',
