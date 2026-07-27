@@ -1,12 +1,3 @@
-/**
- * commands/mute.js
- * ----------------
- * Restricts the group so only admins can send messages ("Group Settings >
- * Send Messages > Only admins" in the WhatsApp UI). Admin-only command.
- *
- * Usage: .mute      (locks the group)
- *        .mute off   (unlocks the group again)
- */
 module.exports = {
   name: 'mute',
   description: 'Restricts the group to admins-only messaging. Use ".mute off" to unmute.',
