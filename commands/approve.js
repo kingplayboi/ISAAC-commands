@@ -1,10 +1,3 @@
-/**
- * commands/approve.js
- * ----------------------
- * Approves all pending join requests (for groups with admin-approval
- * enabled). Admin only.
- * Usage: .approve
- */
 const { isBotAdmin, isSenderAdmin } = require('../utils/isAdmin');
 
 module.exports = {
