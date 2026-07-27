@@ -1,17 +1,3 @@
-/**
- * commands/merge.js
- * -------------------
- * Merge multiple videos into one.
- * Usage:
- *   Reply to a video with .merge         -> adds it to the merge queue
- *   .merge done                          -> concatenates all queued videos
- *   .merge cancel                        -> clears the queue
- *
- * Requires: ffmpeg installed on the system
- * NOTE: fast concat uses -c copy, which requires the queued videos to
- * share the same codec/resolution. Mixed-format videos may fail to merge.
- */
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
