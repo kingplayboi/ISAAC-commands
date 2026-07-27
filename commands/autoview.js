@@ -1,13 +1,3 @@
-/**
- * commands/autoview.js
- * -----------------------
- * Toggles whether the bot automatically marks WhatsApp statuses as
- * viewed. Defaults to ON if never explicitly set.
- *
- * Usage: .autoview        → shows current state
- *        .autoview on|off → changes it
- */
-
 const settingsStore = require('../utils/settingsStore');
 
 module.exports = {
