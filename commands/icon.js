@@ -1,9 +1,3 @@
-/**
- * commands/icon.js
- * -----------------
- * Changes the group's icon/photo. Admin-only.
- * Reply to an image message with .icon
- */
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 module.exports = {
