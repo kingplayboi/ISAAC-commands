@@ -1,16 +1,3 @@
-/**
- * commands/similarimage.js
- * ---------------------------
- * Find visually similar images by uploading the replied image and
- * generating a Google reverse-image-search link for it.
- * Usage: reply to an image with .similarimage
- *
- * NOTE: there's no free, keyless "find similar images" API that returns
- * actual matches directly into chat — this uploads the image (via
- * catbox.moe, same as url.js) and hands back a working reverse-search
- * link instead, which you open to see the real results.
- * Requires: npm install form-data axios
- */
 const axios = require('axios');
 const FormData = require('form-data');
 
