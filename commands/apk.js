@@ -1,15 +1,3 @@
-/**
- * commands/apk.js
- * -----------------
- * Search APKMirror and return the top app result links.
- * Usage: .apk <app name>
- *
- * Requires: npm install axios cheerio
- *
- * NOTE: APKMirror gates direct downloads behind a captcha, so this
- * returns the app page link(s) rather than an auto-downloaded file.
- */
-
 const axios = require('axios');
 const cheerio = require('cheerio');
 
