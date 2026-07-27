@@ -1,4 +1,4 @@
-.exports = {
+module.exports = {
   name: 'calc',
   description: 'Evaluates a basic math expression. Usage: !calc 2 + 2',
   async execute(sock, msg, args) {
