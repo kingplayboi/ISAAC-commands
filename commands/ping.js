@@ -1,15 +1,3 @@
-/**
- * commands/ping.js
- * ----------------
- * Bot health-check command.
- *
- * Reacts to the triggering message with a fast emoji sequence,
- * then sends a placeholder message and edits it with the final
- * response time.
- *
- * Usage: .ping
- */
-
 // The sequence of emojis to cycle through before responding.
 const REACTION_SEQUENCE = ['🤕', '😂', '👀', '🔥', '😈', '🌚', '💀', '🖕', '⚡', '😡', '🤬', '🐛', '✅'];
 const REACTION_DELAY_MS = 80; // fast cycle
