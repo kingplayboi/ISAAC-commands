@@ -1,5 +1,6 @@
 const https = require('https');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { isOwner } = require('../utils/isOwner');
 
 function downloadBuffer(url) {
   return new Promise((resolve, reject) => {
@@ -179,19 +180,36 @@ module.exports = [
     }
   },
 
-  // ── LEFT ─────────────────────────────────────────────
+   // ── LEFT ─────────────────────────────────────────────
   {
     name: 'left',
     description: 'Make the bot leave the current group.',
     async execute(sock, msg) {
       const jid = msg.key.remoteJid;
+
       if (!jid.endsWith('@g.us')) {
-        return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+        return sock.sendMessage(
+          jid,
+          { text: '❌ This command only works in groups.' },
+          { quoted: msg }
+        );
       }
 
-      await sock.sendMessage(jid, { text: '👋 Goodbye! Bot is leaving this group.' });
+      if (!isOwner(msg)) {
+        return sock.sendMessage(
+          jid,
+          { text: '❌ Only the bot owner can use this command.' },
+          { quoted: msg }
+        );
+      }
+
+      await sock.sendMessage(
+        jid,
+        { text: '😡 Goodbye idiots! Bot is leaving this group now.' },
+        { quoted: msg }
+      );
+
       await sock.groupLeave(jid);
     }
   },
-
 ];
