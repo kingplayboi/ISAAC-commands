@@ -66,7 +66,14 @@ module.exports = {
           throw new Error('No code returned from pairing service.');
         }
 
-        await sock.sendMessage(jid, { text: `🔗 Pairing code: ${code}` }, { quoted: msg });
+        // Code goes in its own message, alone, wrapped in backticks —
+        // a tap/long-press then selects exactly the code, nothing else.
+        await sock.sendMessage(jid, { text: `\`${code}\`` });
+        await sock.sendMessage(
+          jid,
+          { text: `🔗 Pairing code for ${number} above — tap and hold to copy.` },
+          { quoted: msg }
+        );
       } catch (error) {
         console.error('[PAIR ERROR]', error);
         await sock.sendMessage(
