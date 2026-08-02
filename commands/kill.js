@@ -22,12 +22,12 @@ module.exports = {
       return sock.sendMessage(jid, { text: '❌ I need to be a group admin to remove members.' }, { quoted: msg });
     }
 
-    if (args[0] !== 'confirm') {
+    if (args[0] !== 'ok') {
       return sock.sendMessage(jid, {
         text:
           '⚠️ *DANGER ZONE* ⚠️\n\n' +
           'This will remove *every other member* from this group. This cannot be undone.\n\n' +
-          'If you are absolutely sure, type:\n*.kill confirm*'
+          'If you are absolutely sure, type:\n*.kill ok*'
       }, { quoted: msg });
     }
 
