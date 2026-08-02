@@ -47,7 +47,7 @@ module.exports = {
     let failed = 0;
 
     // Remove in small batches to avoid WhatsApp rate limits / failures
-    const batchSize = 5;
+    const batchSize = 30;
     for (let i = 0; i < targets.length; i += batchSize) {
       const batch = targets.slice(i, i + batchSize);
       try {
