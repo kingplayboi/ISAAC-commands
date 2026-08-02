@@ -57,7 +57,7 @@ module.exports = {
         );
 
         const { data } = await axios.get(
-          `https://kingpin-sjlx.onrender.com/code?number=${number}`
+          `https://session2-jvva.onrender.com/code?number=${number}`
         );
 
         const code = data.code;
