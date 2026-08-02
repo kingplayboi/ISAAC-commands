@@ -1,9 +1,3 @@
-/**
- * commands/ai.js
- * ---------------
- * AI commands: gemini, groq, gpt (groq), dall (pollinations), upscale (pollinations)
- */
-
 const https = require('https');
 const http = require('http');
 
