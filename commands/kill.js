@@ -1,4 +1,4 @@
-onst { isBotAdmin, getBotIdentifiers } = require('../utils/isAdmin');
+const { isBotAdmin, getBotIdentifiers } = require('../utils/isAdmin');
 const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
