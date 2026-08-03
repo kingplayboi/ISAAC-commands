@@ -1,14 +1,3 @@
-/**
- * commands/antidelete.js
- * -------------------------
- * Controls antidelete: when on, if someone deletes or edits a message,
- * the bot resends the original (and new, if edited) content.
- *
- * Usage:
- *   .antidelete on|off   - master on/off (keeps current destination)
- *   .antidelete g        - turn on, resend to the original chat/group
- *   .antidelete p        - turn on, resend to the bot's own DM (private)
- */
 const settingsStore = require('../utils/settingsStore');
 
 module.exports = {
