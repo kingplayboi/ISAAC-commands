@@ -1,11 +1,3 @@
-/**
- * commands/owner.js
- * ------------------
- * Sends the bot owner's contact card (vcard) along with an info message.
- *
- * Usage: .owner
- */
-
 module.exports = {
   name: 'owner',
   description: "Shows the bot owner's contact info.",
@@ -13,7 +5,7 @@ module.exports = {
     const jid = msg.key.remoteJid;
 
     // ── Customize these details ────────────────────────────────────────────
-    const ownerName = 'kingplayboi';
+    const ownerName = 'ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ';
     const ownerNumber = '254754574642'; // digits only, with country code, no +
 
     const vcard =
@@ -26,7 +18,7 @@ module.exports = {
 
     const infoText = `
 ╭──〔 👑 OWNER INFO 〕──╮
-🤖 *Bot:* ISAAC
+🤖 *Bot:* ISAAC BOT
 👤 *Owner:* ${ownerName}
 📱 *Contact:* +${ownerNumber}
 ╰──────────────────╯`.trim();
