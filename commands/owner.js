@@ -6,7 +6,7 @@ module.exports = {
 
     // ── Customize these details ────────────────────────────────────────────
     const ownerName = 'ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ';
-    const ownerNumber = '254754574642'; // digits only, with country code, no +
+    const ownerNumber = '254718701810'; // digits only, with country code, no +
 
     const vcard =
       'BEGIN:VCARD\n' +
@@ -18,7 +18,7 @@ module.exports = {
 
     const infoText = `
 ╭──〔 👑 OWNER INFO 〕──╮
-🤖 *Bot:* ISAAC BOT
+🤖 *Bot:* ISAAC-MD
 👤 *Owner:* ${ownerName}
 📱 *Contact:* +${ownerNumber}
 ╰──────────────────╯`.trim();
