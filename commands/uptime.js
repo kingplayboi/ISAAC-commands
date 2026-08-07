@@ -3,6 +3,7 @@ const path = require('path');
 
 module.exports = {
   name: 'uptime',
+  aliases: ['up'],
   description: 'Shows how long the bot has been running, with an audio clip.',
   async execute(sock, msg) {
     console.log("[UPTIME] execute started");
