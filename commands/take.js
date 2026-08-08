@@ -5,7 +5,7 @@ module.exports = {
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
     const { Sticker, StickerTypes } = require('wa-sticker-formatter');
-    const Jimp = require('jimp');
+    const { Jimp } = require('jimp');
     const fs = require('fs');
     const pushname = msg.pushName || 'No Name';
 
