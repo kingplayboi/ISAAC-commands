@@ -39,7 +39,7 @@ module.exports = {
             body: 'https://chat.whatsapp.com/JPH5gho7uxfBMviXg7sNNs',
             thumbnail,
             sourceUrl: 'https://chat.whatsapp.com/JPH5gho7uxfBMviXg7sNNs',
-            mediaType: 0,
+            mediaType: 1,
             renderLargerThumbnail: true,
           },
         },
