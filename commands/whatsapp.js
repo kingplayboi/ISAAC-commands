@@ -210,18 +210,6 @@ module.exports = [
     }
   },
 
-  // ── ANTIEDIT ──────────────────────────────────────────────────────────────
-  {
-    name: 'antiedit',
-    description: 'Toggle antiedit — reveals original message when someone edits it.',
-    async execute(sock, msg) {
-      const jid = msg.key.remoteJid;
-      await sock.sendMessage(jid, {
-        text: `ℹ️ Antiedit is handled automatically by the bot's event listener.\nEdited messages in this chat will be revealed.`
-      }, { quoted: msg });
-    }
-  },
-
   // ── CINFO ─────────────────────────────────────────────────────────────────
   {
     name: 'cinfo',
