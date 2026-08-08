@@ -9,28 +9,16 @@ function formatUptime(seconds) {
 module.exports = {
   name: 'runtime',
   aliases: ['stats'],
-  description: 'Check bot runtime with rich card',
+  description: 'Check bot runtime',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
-    const text = `𝐈𝐒𝐀𝐀𝐂-𝐌𝐃 𝗵𝗮𝘀 𝗯𝗲𝗲𝗻 𝗿𝘂𝗻𝗻𝗶𝗻𝗴 𝘀𝗶𝗻𝗰𝗲 ${formatUptime(process.uptime())}`;
+    const text =
+      `𝐈𝐒𝐀𝐀𝐂-𝐌𝐃 𝗵𝗮𝘀 𝗯𝗲𝗲𝗻 𝗿𝘂𝗻𝗻𝗶𝗻𝗴 𝘀𝗶𝗻𝗰𝗲 ${formatUptime(process.uptime())}\n\n` +
+      `https://chat.whatsapp.com/JPH5gho7uxfBMviXg7sNNs`;
 
-    await sock.sendMessage(
-      jid,
-      {
-        text,
-        contextInfo: {
-          externalAdReply: {
-            showAdAttribution: true,
-            title: 'ISAAC-MD',
-            body: 'https://chat.whatsapp.com/JPH5gho7uxfBMviXg7sNNs',
-            thumbnailUrl: 'https://i.ibb.co/HLWq3qVs/faab81f4a3dd.jpg',
-            sourceUrl: 'https://chat.whatsapp.com/JPH5gho7uxfBMviXg7sNNs',
-            mediaType: 1,
-            renderLargerThumbnail: true,
-          },
-        },
-      },
-      { quoted: msg }
-    );
+    // Sent as plain text so WhatsApp auto-generates its own native
+    // "Join Group" preview card (real group photo, correct tap-to-join
+    // behavior) — more reliable than faking a card via externalAdReply.
+    await sock.sendMessage(jid, { text }, { quoted: msg });
   },
 };
