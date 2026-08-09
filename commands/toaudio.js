@@ -1,12 +1,3 @@
-/**
- * commands/toaudio.js
- * ---------------------
- * Extracts the audio track from a video and sends it back as an audio file.
- *
- * Usage:
- *   Reply to a video with .toaudio
- */
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -66,7 +57,9 @@ module.exports = {
       tmpAudio = path.join(tmpDir, `toaudio_out_${Date.now()}.m4a`);
       fs.writeFileSync(tmpVideo, buffer);
 
-      await execFileAsync('ffmpeg', [
+      const ffmpegPath = process.env.FFMPEG_PATH || require('ffmpeg-static') || 'ffmpeg';
+
+      await execFileAsync(ffmpegPath, [
         '-y', '-i', tmpVideo,
         '-vn',
         '-c:a', 'aac',
