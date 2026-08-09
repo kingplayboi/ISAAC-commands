@@ -28,6 +28,7 @@ module.exports = {
 ┣ AntiGM: ${antigmMode}
 ┣ AntiLinkAll: ${onOff(settingsStore.get('antilinkall', false))}
 ┣ AntiDelete: ${onOff(settingsStore.get('antidelete', false))}
+┣ AntiEdit: ${onOff(settingsStore.get('antiedit', false))}
 ┣ AntiCall: ${onOff(settingsStore.get('anticall', false))}
 ┣ AntiBot: ${onOff(settingsStore.get('antibot', false))}
 ┣ AntiTag: ${onOff(settingsStore.get('antitag', false))}
