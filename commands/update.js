@@ -1,23 +1,3 @@
-/**
- * commands/update.js
- * ---------------------
- * .update    — check if a newer version is available.
- *   - On a real git checkout (Termux/VPS): compares HEAD against origin/main.
- *   - On Heroku (no .git at runtime): compares the currently-running slug's
- *     commit (via Heroku's dyno metadata) against the latest commit on
- *     GitHub's main branch, using GitHub's public REST API. No token
- *     required since the repo is public.
- *
- * .updatenow — owner-only.
- *   - On a real git checkout: git pull, npm install if package.json
- *     changed, then restart the bot in place.
- *   - On Heroku: triggers a fresh build from the GitHub repo's tarball via
- *     the Heroku Platform API. Requires HEROKU_API_KEY and HEROKU_APP_NAME
- *     to be set in that app's config vars. Heroku restarts the dyno(s)
- *     automatically once the new build releases — no manual restart step
- *     needed.
- */
-
 const path = require('path');
 const fs = require('fs');
 const { execSync, spawn } = require('child_process');
@@ -54,19 +34,6 @@ async function githubApi(endpoint) {
   }
   return res.json();
 }
-
-/**
- * Compares the deployed commit against the latest on GitHub.
- *
- * The deployed commit is tracked via a DEPLOYED_COMMIT config var, set
- * directly by .updatenow right before it triggers a build (see below).
- * We can't detect this after the fact by reading .git at build time,
- * because Heroku builds from a GitHub tarball (no .git folder present),
- * so .updatenow tells Heroku what it's deploying instead of guessing.
- *
- * Falls back to HEROKU_SLUG_COMMIT for anyone who already has
- * runtime-dyno-metadata enabled from before this change.
- */
 async function checkHerokuUpdate() {
   const currentCommit = process.env.DEPLOYED_COMMIT || process.env.HEROKU_SLUG_COMMIT;
 
