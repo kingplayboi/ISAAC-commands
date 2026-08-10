@@ -39,6 +39,8 @@ module.exports = {
 ┣ AutoLike: ${onOff(settingsStore.get('autolike', false))}
 ┣ AutoView: ${onOff(settingsStore.get('autoview', true))}
 ┣ AutoBio: ${onOff(settingsStore.get('autobio', false))}
+┣ AutoRecording: ${onOff(settingsStore.get('autorecording', false))}
+┣ AutoTyping: ${onOff(settingsStore.get('autotyping', false))}
 ┗ WelcomeGoodbye: ${onOff(settingsStore.get('welcomegoodbye', false))}
 
 *💬 Bot Behaviour*
