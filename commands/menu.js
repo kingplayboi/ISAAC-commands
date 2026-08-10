@@ -79,7 +79,7 @@ const categories = {
     'DOWNLOAD': ['download', 'igstory', 'pindl', 'play2', 'video', 'video2', 'audio', 'spotify', 'play', 'tiktok', 'ig', 'fb', 'twitter', 'song', 'shazam', 'lyrics', 'lyrics2'],
     'AI': ['gemini', 'upload', 'imagine', 'vision2', 'groq', 'worm', 'gpt', 'dall', 'bing', 'upscale', 'lydia', 'autoreply', 'vision', 'void', 'claude', 'wormgpt', 'tts', 'gptdm'],
     'USER': ['block', 'unblock', 'pp', 'fullpp', 'jid', 'gjid', 'left', 'ison'],
-    'TOOLS': ['webscan', 'zip', 'screenshot', 'gitclone', 'apk', 'clearcache', 'qr', 'zodiac', 'url', 'imagesearch', 'define'],
+    'TOOLS': ['fancy', 'webscan', 'zip', 'screenshot', 'gitclone', 'apk', 'clearcache', 'qr', 'zodiac', 'url', 'imagesearch', 'define'],
     'SECURITY': ['antifake', 'antigm', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
     'FOOTBALL': ['livescore', 'standings', 'table', 'bundesliga', 'epl', 'laliga', 'ligue1', 'seriea', 'ucl', 'news', 'playersearch', 'teamsearch', 'fifa', 'fifaplayoffs', 'euro', 'eplscorers', 'laligascorers', 'bundesligascorers', 'serieascorers', 'ligue1scorers', 'uclscorers'],
     'CODING': ['enc', 'gpass', 'compile-py', 'compile-js', 'compile-c', 'compile-c++'],
