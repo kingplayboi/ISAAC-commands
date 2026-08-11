@@ -46,7 +46,7 @@ module.exports = {
           { quoted: msg }
         );
         const { data } = await axios.get(
-          `https://session2-jvva.onrender.com/code?number=${number}`
+          `https://session2-bvny.onrender.com/code?number=${number}`
         );
         const code = data.code;
         if (!code) {

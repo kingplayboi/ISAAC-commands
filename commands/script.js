@@ -31,8 +31,8 @@ Hello 👋 *${senderName},*
 ↳ https://github.com/kingplayboi
 
 🔗 *WhatsApp Pairing:*
-↳ https://session2-jvva.onrender.com/
-↳ https://kingpin-sjlx.onrender.com
+↳ https://session2-bvny.onrender.com/
+↳ https://kingpin-9aqy.onrender.com
 ★ Save your Session-ID!
 
 ⚙️ *Requirements:*
