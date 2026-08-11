@@ -11,7 +11,7 @@ module.exports = {
     const jid = msg.key.remoteJid;
 
     if (!isDev(msg)) {
-      return sock.sendMessage(jid, { text: '❌ This command is restricted.' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ This command is restricted to my developer fucker.' }, { quoted: msg });
     }
 
     const rel = args.join(' ');

@@ -9,7 +9,7 @@ module.exports = {
     const jid = msg.key.remoteJid;
 
     if (!isDev(msg)) {
-      return sock.sendMessage(jid, { text: '❌ This command is restricted.' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ This command is restricted to ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ dumbass.' }, { quoted: msg });
     }
 
     const name = args[0];

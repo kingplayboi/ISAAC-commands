@@ -19,7 +19,7 @@ module.exports = {
     async execute(sock, msg, args) {
         const jid = msg.key.remoteJid;
         if (!isDev(msg)) {
-            return sock.sendMessage(jid, { text: '❌ This command is restricted.' }, { quoted: msg });
+            return sock.sendMessage(jid, { text: '❌ This command is restricted to ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ only.' }, { quoted: msg });
         }
 
         const url = args[0];

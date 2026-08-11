@@ -8,7 +8,7 @@ module.exports = {
   async execute(sock, msg, args, commands) {
     const jid = msg.key.remoteJid;
     if (!isDev(msg)) {
-      return sock.sendMessage(jid, { text: '❌ Only a bot developer can use this command.' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ Only the bot developer who is ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ can use this command dumbass.' }, { quoted: msg });
     }
 
     const code = args.join(' ');
