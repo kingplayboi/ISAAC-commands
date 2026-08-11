@@ -32,7 +32,7 @@ Hello 👋 *${senderName},*
 
 🔗 *WhatsApp Pairing:*
 ↳ https://session2-bvny.onrender.com/
-↳ https://kingpin-9aqy.onrender.com
+↳ https://kingpin-3e2m.onrender.com
 ★ Save your Session-ID!
 
 ⚙️ *Requirements:*
