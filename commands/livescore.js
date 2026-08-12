@@ -3,84 +3,23 @@ const axios = require("axios");
 const { KEITH_BASE } = require('../config/apis');
 const API = `${KEITH_BASE}/livescore`;
 
-// Comprehensive Whitelist of All Top Global Leagues & Competitions
-const TOP_LEAGUES = [
-  // 🏆 UEFA European Club Competitions
-  "champions league",
-  "europa league",
-  "conference league",
-  "super cup",
+const MAJOR_CATEGORIES = [
+  "england", "spain", "italy", "germany", "france", 
+  "turkey", "netherlands", "portugal", "saudi arabia", 
+  "europe", "world", "international", "usa", "brazil", "argentina"
+];
 
-  // 🇬🇧 England
-  "premier league",
-  "championship",
-  "efl championship",
-  "fa cup",
-  "carabao cup",
-  "efl cup",
-
-  // 🇪🇸 Spain
-  "la liga",
-  "laliga",
-  "copa del rey",
-
-  // 🇮🇹 Italy
-  "serie a",
-  "coppa italia",
-
-  // 🇩🇪 Germany
-  "bundesliga",
-  "dfb pokal",
-
-  // 🇫🇷 France
-  "ligue 1",
-  "coupe de france",
-
-  // 🇹🇷 Turkey (Galatasaray, Fenerbahçe, Beşiktaş)
-  "super lig",
-  "süper lig",
-  "turkish super lig",
-
-  // 🇳🇱 Netherlands & 🇵🇹 Portugal
-  "eredivisie",
-  "primeira liga",
-  "liga portugal",
-
-  // 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland, 🇧🇪 Belgium, 🇬🇷 Greece, 🇨🇭 Switzerland, 🇦🇹 Austria, 🇩🇰 Denmark
-  "scottish premiership",
-  "belgian pro league",
-  "jupiler pro league",
-  "super league greece",
-  "swiss super league",
-  "austrian bundesliga",
-  "superliga",
-
-  // 🇸🇦 Saudi Arabia & 🇺🇸 Americas
-  "saudi pro league",
-  "mls",
-  "major league soccer",
-  "liga mx",
-  "serie a brazil",
-  "brasileirao",
-  "liga profesional",
-  "copa libertadores",
-  "copa sudamericana",
-
-  // 🌍 International & Continental Tournaments
-  "world cup",
-  "euros",
-  "euro qualification",
-  "copa america",
-  "nations league",
-  "afcon",
-  "africa cup of nations",
-  "afc champions league",
-  "club world cup"
+const MAJOR_LEAGUES = [
+  "premier league", "championship", "la liga", "laliga", "serie a", 
+  "bundesliga", "ligue 1", "super lig", "süper lig", "eredivisie", 
+  "primeira liga", "champions league", "europa league", "conference league", 
+  "super cup", "copa libertadores", "saudi pro league", "mls", 
+  "world cup", "euros", "afcon", "nations league", "fa cup", "copa del rey"
 ];
 
 module.exports = {
   name: "livescore",
-  description: "Shows current football live scores for top leagues worldwide.",
+  description: "Shows current football live scores for top leagues with general fallback.",
 
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
@@ -94,7 +33,7 @@ module.exports = {
     try {
       const { data } = await axios.get(API);
 
-      if (!data.status) {
+      if (!data.status || !data.result || !data.result.games) {
         return sock.sendMessage(
           jid,
           {
@@ -116,25 +55,25 @@ module.exports = {
         );
       }
 
-      // Filter matches dynamically by checking league metadata
       const filteredGames = allGames.filter(game => {
-        const leagueName = (game.L || game.league || game.sn || "").toLowerCase();
-        const countryCategory = (game.cn || "").toLowerCase();
-        const fullLeagueStr = `${countryCategory} ${leagueName}`.trim();
+        const country = (game.cn || "").toLowerCase();
+        const league = (game.L || game.league || game.sn || "").toLowerCase();
+        const fullStr = `${country} ${league}`;
 
-        return TOP_LEAGUES.some(topLeague => 
-          fullLeagueStr.includes(topLeague) || leagueName.includes(topLeague)
-        );
+        const isMajorCategory = MAJOR_CATEGORIES.some(cat => country.includes(cat));
+        const isExplicitLeague = MAJOR_LEAGUES.some(l => fullStr.includes(l));
+
+        return isExplicitLeague || (isMajorCategory && !league.includes("division") && !league.includes("reserve") && !league.includes("u19") && !league.includes("u21"));
       });
 
-      // Show filtered games if available, otherwise fall back to all games
       const gamesToShow = filteredGames.length > 0 ? filteredGames : allGames;
+      const isTopMatches = filteredGames.length > 0;
 
-      let text = filteredGames.length > 0 
+      let text = isTopMatches 
         ? "⚽ *LIVE SCORES (MAJOR LEAGUES)*\n\n" 
-        : "⚽ *LIVE SCORES*\n\n";
+        : "⚽ *LIVE SCORES (OTHER MATCHES)*\n\n";
 
-      for (const game of gamesToShow.slice(0, 20)) {
+      for (const game of gamesToShow.slice(0, 50)) {
         const status = game.R?.st || "NS";
         const home = game.p1;
         const away = game.p2;
@@ -150,8 +89,8 @@ module.exports = {
         text += `⏱ ${status}\n\n`;
       }
 
-      if (gamesToShow.length > 20) {
-        text += `📄 Showing 20 of ${gamesToShow.length} matches.`;
+      if (gamesToShow.length > 50) {
+        text += `📄 Showing 50 of ${gamesToShow.length} matches.`;
       }
 
       await sock.sendMessage(jid, {
