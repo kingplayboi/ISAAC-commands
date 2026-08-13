@@ -128,7 +128,7 @@ module.exports = [
       const jid = msg.key.remoteJid;
 
       if (!msg.key.fromMe) {
-        return sock.sendMessage(jid, { text: '❌ Only the owner can run this.' }, { quoted: msg });
+        return sock.sendMessage(jid, { text: '❌ Only the owner can run this dumbass.' }, { quoted: msg });
       }
 
       // --- Real git checkout (Termux / VPS) ---
