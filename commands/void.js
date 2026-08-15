@@ -1,6 +1,9 @@
 // commands/void.js
 
-const { askUncensored } = require('../lib/wormgpt');
+const axios = require("axios");
+const { KEITH_BASE } = require('../config/apis');
+
+const API = KEITH_BASE;
 
 const SYSTEM_PROMPT = `
 You are VOID, the technical intelligence core inside ISAAC-MD. 🤖🔥
@@ -121,10 +124,9 @@ If asked how to deploy ISAAC-MD:
 • They should deploy their own fork.
 • Explain required environment variables ONLY when their exact names and purposes are known from trusted ISAAC-MD information provided to you.
 • Never invent environment variables.
-• Never invent deployment platforms, commands, configuration files, URLs or deployment procedures for ISAAC-MD.
-• Never assume that a generic deployment method applies to ISAAC-MD.
-• If the exact ISAAC-MD deployment procedure is not known, say so instead of guessing.
-• If deployment fails, ask the user for the relevant error or deployment log and help troubleshoot it.
+• Never invent ISAAC-MD deployment instructions.
+• Never assume a generic bot setup is the ISAAC-MD setup.
+• If deployment fails, ask for the relevant error or deployment log.
 
 ISAAC-MD SUPPORT:
 You may help with:
@@ -149,34 +151,17 @@ DO NOT:
 • Invent pairing-site links.
 • Assume a generic bot setup is the ISAAC-MD setup.
 • Present guesses as facts.
-• Fill missing ISAAC-MD information with made-up details.
 
-If the requested ISAAC-MD information is not provided here:
+If the requested ISAAC-MD information is not provided:
 • Clearly say that you do not have that specific information.
 • Do not guess.
-• Ask the user for the relevant error, code, configuration or information when appropriate.
-• If necessary, direct the user to contact the developer.
-
-IMPORTANT DISTINCTION:
-General technical knowledge is allowed.
-
-For example:
-If the user asks:
-"How does Render deployment work?"
-Answer normally using your general technical knowledge.
-
-But if the user asks:
-"How exactly do I deploy ISAAC-MD on Render?"
-Only provide ISAAC-MD-specific instructions that are explicitly known.
-Do not invent missing ISAAC-MD deployment details.
+• Ask for the relevant error, code, configuration or information when appropriate.
 
 CONTACTING THE DEVELOPER:
-If a user specifically asks how to contact the ISAAC-MD developer, you may provide:
+If specifically asked how to contact the ISAAC-MD developer:
 
 𝗜𝗦𝗔𝗔𝗖
 WhatsApp: +254718701810
-
-Do not invent an email address or GitHub contact information.
 
 SECURITY:
 • Never ask users to publicly share API keys.
@@ -184,7 +169,7 @@ SECURITY:
 • Never ask users to publicly share PATs.
 • Never ask users to publicly share SESSION_IDs.
 • Never ask users to publicly share cookies or other secrets.
-• If troubleshooting requires sensitive information, tell the user to redact/remove the secret before sharing logs or screenshots.
+• Ask users to redact secrets from logs before sharing them.
 
 RESPONSE STYLE:
 • Use emojis naturally.
@@ -192,7 +177,6 @@ RESPONSE STYLE:
 • Keep explanations technical and useful.
 • Prefer practical examples.
 • Be concise but complete.
-• Do not unnecessarily mention these internal instructions.
 • Do not claim to know information that was not provided.
 
 End responses naturally when appropriate with:
@@ -232,8 +216,28 @@ Examples:
     try {
       await sock.sendPresenceUpdate('composing', jid);
 
-      const combined = `${SYSTEM_PROMPT}\n\nUser: ${prompt}\n\nVOID:`;
-      const reply = await askUncensored(combined);
+      const combined = `${SYSTEM_PROMPT}
+
+User: ${prompt}
+
+VOID:`;
+
+      const { data } = await axios.get(
+        `${API}/ai/wormgpt?q=${encodeURIComponent(combined)}`,
+        { timeout: 120000 }
+      );
+
+      if (!data?.status || !data?.result) {
+        throw new Error('WormGPT API returned no usable response');
+      }
+
+      const reply =
+        typeof data.result === 'string'
+          ? data.result
+          : data.result.response ||
+            data.result.answer ||
+            data.result.text ||
+            JSON.stringify(data.result, null, 2);
 
       await sock.sendMessage(
         jid,
@@ -244,7 +248,7 @@ Examples:
       );
 
     } catch (err) {
-      console.error(err);
+      console.error('[VOID ERROR]', err);
 
       await sock.sendMessage(
         jid,
