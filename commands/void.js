@@ -1,7 +1,9 @@
 // commands/void.js
 
-const path = require('path');
-const { askUncensored } = require(path.join(__dirname, '../lib/wormgpt'));
+const axios = require("axios");
+const { KEITH_BASE } = require('../config/apis');
+
+const API = KEITH_BASE;
 
 const SYSTEM_PROMPT = `
 You are VOID, the technical intelligence core inside ISAAC-MD. 🤖🔥
@@ -214,9 +216,28 @@ Examples:
     try {
       await sock.sendPresenceUpdate('composing', jid);
 
-      const combinedPrompt = `${SYSTEM_PROMPT}\n\nUser: ${prompt}\n\nVOID:`;
+      const combined = `${SYSTEM_PROMPT}
 
-      const reply = await askUncensored(combinedPrompt);
+User: ${prompt}
+
+VOID:`;
+
+      const { data } = await axios.get(
+        `${API}/ai/wormgpt?q=${encodeURIComponent(combined)}`,
+        { timeout: 120000 }
+      );
+
+      if (!data?.status || !data?.result) {
+        throw new Error('WormGPT API returned no usable response');
+      }
+
+      const reply =
+        typeof data.result === 'string'
+          ? data.result
+          : data.result.response ||
+            data.result.answer ||
+            data.result.text ||
+            JSON.stringify(data.result, null, 2);
 
       await sock.sendMessage(
         jid,
@@ -244,4 +265,3 @@ Examples:
     }
   }
 };
-
