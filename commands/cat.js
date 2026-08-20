@@ -28,6 +28,18 @@ module.exports = {
     }
 
     const content = fs.readFileSync(filePath, 'utf8');
-    await sock.sendMessage(jid, { text: content.slice(0, 4000) }, { quoted: msg });
+
+    if (!content.trim()) {
+      return sock.sendMessage(jid, { text: '⚠️ File is empty.' }, { quoted: msg });
+    }
+
+    const CHUNK_SIZE = 3800; // Safe threshold for WhatsApp text message limits
+
+    // Send the complete file content as sequential text messages
+    for (let i = 0; i < content.length; i += CHUNK_SIZE) {
+      const chunk = content.slice(i, i + CHUNK_SIZE);
+      await sock.sendMessage(jid, { text: chunk }, { quoted: i === 0 ? msg : undefined });
+    }
   },
 };
+
