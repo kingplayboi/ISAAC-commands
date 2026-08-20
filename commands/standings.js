@@ -1,5 +1,7 @@
 const axios = require("axios");
 
+const { KEITH_BASE } = require('../config/apis');
+
 module.exports = {
     name: "standings",
     aliases: ["fixtures", "matches"],
@@ -20,8 +22,10 @@ module.exports = {
         };
 
         if (!args[0] || !leagues[args[0].toLowerCase()]) {
-            return await sock.sendMessage(jid, {
-                text: `⚽ *Upcoming Football Matches*
+            return await sock.sendMessage(
+                jid,
+                {
+                    text: `⚽ *Upcoming Football Matches*
 
 Usage:
 .standings epl
@@ -32,76 +36,99 @@ Usage:
 .standings ucl
 .standings euros
 .standings fifa`
-            }, { quoted: msg });
+                },
+                { quoted: msg }
+            );
         }
 
         const league = leagues[args[0].toLowerCase()];
 
         try {
-            const url = `https://apiskeith2-production-ec66.up.railway.app/${league}/upcomingmatches`;
+            const url = `${KEITH_BASE}/${league}/upcomingmatches`;
 
             const { data } = await axios.get(url);
 
             if (!data.status || !data.result) {
-                return await sock.sendMessage(jid, {
-                    text: "❌ No upcoming matches found."
-                }, { quoted: msg });
+                return await sock.sendMessage(
+                    jid,
+                    {
+                        text: "❌ No upcoming matches found."
+                    },
+                    { quoted: msg }
+                );
             }
 
-            const competition = data.result.competition || league.toUpperCase();
+            const competition =
+                data.result.competition || league.toUpperCase();
+
             const fixtures = data.result.upcomingMatches;
 
-if (!Array.isArray(fixtures) || fixtures.length === 0) {
-    return await sock.sendMessage(jid, {
-        text: "❌ No upcoming matches found."
-    }, { quoted: msg });
-}
+            if (!Array.isArray(fixtures) || fixtures.length === 0) {
+                return await sock.sendMessage(
+                    jid,
+                    {
+                        text: "❌ No upcoming matches found."
+                    },
+                    { quoted: msg }
+                );
+            }
 
-// Find the next upcoming matchday
-const currentMatchday = Math.min(...fixtures.map(m => m.matchday));
+            // Find the next upcoming matchday
+            const currentMatchday = Math.min(
+                ...fixtures.map(match => match.matchday)
+            );
 
-// Show only matches from that matchday
-const currentFixtures = fixtures.filter(
-    m => m.matchday === currentMatchday
-);
+            // Only show the next matchday
+            const currentFixtures = fixtures.filter(
+                match => match.matchday === currentMatchday
+            );
 
-let text = `🏆 *${data.result.competition || league.toUpperCase()} Upcoming Matches*\n`;
-text += `📅 *Matchday ${currentMatchday}*\n\n`;
+            let text =
+                `🏆 *${competition} Upcoming Matches*\n` +
+                `📅 *Matchday ${currentMatchday}*\n\n`;
 
-for (const match of currentFixtures) {
-    const date = new Date(match.date);
+            for (const match of currentFixtures) {
+                const date = new Date(match.date);
 
-const formattedDate = date.toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-});
+                const formattedDate = date.toLocaleDateString("en-GB", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                });
 
-const formattedTime = date.toLocaleTimeString("en-GB", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
-});
+                const formattedTime = date.toLocaleTimeString("en-GB", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true
+                });
 
-text +=
+                text +=
 `⚽ ${match.homeTeam} vs ${match.awayTeam}
 🗓️ ${formattedDate}
 🕖 ${formattedTime}
 
 `;
-}
+            }
 
-await sock.sendMessage(jid, {
-    text: text.trim()
-}, { quoted: msg });
+            await sock.sendMessage(
+                jid,
+                {
+                    text: text.trim()
+                },
+                { quoted: msg }
+            );
 
         } catch (err) {
-            console.error(err);
+            console.error("[standings] API error:", err.message);
 
-            await sock.sendMessage(jid, {
-                text: "❌ Failed to fetch upcoming matches."
-            }, { quoted: msg });
+            await sock.sendMessage(
+                jid,
+                {
+                    text: "❌ Failed to fetch upcoming matches."
+                },
+                { quoted: msg }
+            );
         }
     }
 };
