@@ -5,8 +5,10 @@ module.exports = {
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
     const { Sticker, StickerTypes } = require('wa-sticker-formatter');
-    const { Jimp } = require('jimp');
+    const sharp = require('sharp');
     const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
     const pushname = msg.pushName || 'No Name';
 
     const ctx = msg.message?.extendedTextMessage?.contextInfo;
@@ -36,8 +38,6 @@ module.exports = {
     const quotedKey = { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant, fromMe: false };
     const buffer = await downloadMediaMessage({ message: quoted, key: quotedKey }, 'buffer', {});
 
-    const os = require('os');
-    const path = require('path');
     const inputPath = path.join(os.tmpdir(), `take_in_${Date.now()}`);
     fs.writeFileSync(inputPath, buffer);
 
@@ -116,22 +116,16 @@ module.exports = {
         }
 
       } else {
-        const sharp = require('sharp');
-        const stickerSize = 512;
-        let img;
-        try {
-          img = await Jimp.read(buffer);
-        } catch (e) {
-          const pngPath = path.join(os.tmpdir(), `take_${Date.now()}.png`);
-          await sharp(buffer).png().toFile(pngPath);
-          img = await Jimp.read(pngPath);
-          try { fs.unlinkSync(pngPath); } catch {}
-        }
-        const padded = img.clone()
-          .contain(stickerSize, stickerSize)
-          .background(0x00000000);
-        const paddedBuffer = await padded.getBufferAsync(Jimp.MIME_PNG);
-        const sticker = new Sticker(paddedBuffer, {
+        // Image & Static Sticker Processing using Sharp
+        const processedImageBuffer = await sharp(buffer)
+          .resize(512, 512, {
+            fit: 'contain',
+            background: { r: 0, g: 0, b: 0, alpha: 0 }
+          })
+          .png()
+          .toBuffer();
+
+        const sticker = new Sticker(processedImageBuffer, {
           pack: pushname,
           author: 'ISAAC-MD',
           type: StickerTypes.DEFAULT,
@@ -150,3 +144,4 @@ module.exports = {
     }
   },
 };
+
