@@ -11,6 +11,7 @@ const BK9_BASE = 'https://api.bk9.dev';
 const geminiSessions = new Map();
 const groqSessions = new Map();
 const gptSessions = new Map();
+const mistralSessions = new Map();
 const wormgptSessions = new Map();
 
 function getHistory(store, id) {
@@ -78,30 +79,26 @@ function downloadImage(url) {
   });
 }
 
-// Tries Keith first; on any failure (network error, non-JSON, status:false),
-// falls back to BK9's /ai/llama. Returns { reply, usedFallback }, or throws
-// if both sources fail — so the caller only has to handle one error case.
+// Tries primary Keith endpoint first; on any failure, falls back to BK9
 async function getAIReply(endpointPath, prompt) {
   const encoded = encodeURIComponent(prompt);
 
   try {
     const json = await httpsGetJSON(`${KEITH_BASE}${endpointPath}?q=${encoded}`);
-    if (!json.status) throw new Error(json.error || 'Keith API returned status:false');
-    return { reply: json.result, usedFallback: false };
+    if (!json.status || !json.result) throw new Error(json.error || 'Keith API returned invalid status');
+    return { reply: typeof json.result === 'string' ? json.result : JSON.stringify(json.result), usedFallback: false };
   } catch (primaryErr) {
     try {
       const json = await httpsGetJSON(`${BK9_BASE}/ai/llama?q=${encoded}`);
       if (!json.status) throw new Error(json.err || 'BK9 API returned status:false');
       return { reply: json.BK9, usedFallback: true };
     } catch (fallbackErr) {
-      throw new Error(`Primary (Keith) failed: ${primaryErr.message} — Fallback (BK9) also failed: ${fallbackErr.message}`);
+      throw new Error(`Primary API failed: ${primaryErr.message} — Fallback API failed: ${fallbackErr.message}`);
     }
   }
 }
 
-// Runs a memory-backed AI chat command: sends a "thinking" placeholder,
-// edits it into the final reply in place (same pattern as pair.js), and
-// supports "-clear" to reset the caller's conversation history.
+// Runs a memory-backed AI chat command
 function makeChatCommand({ name, aliases, label, emoji, sessions, endpointPath, brandReplace }) {
   return {
     name,
@@ -164,35 +161,48 @@ function makeChatCommand({ name, aliases, label, emoji, sessions, endpointPath, 
 
 module.exports = [
 
+  // ── Operational Keith Endpoints ──────────────────────────────────────────
   makeChatCommand({
-    name: 'gemini',
-    label: 'Gemini AI',
-    emoji: '🤖',
-    sessions: geminiSessions,
-    endpointPath: '/ai/gemini',
+    name: 'gpt',
+    aliases: ['gpt4', 'chatgpt'],
+    label: 'GPT-4 AI',
+    emoji: '🧠',
+    sessions: gptSessions,
+    endpointPath: '/ai/gpt4',
+    brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
+  }),
+
+  makeChatCommand({
+    name: 'mistral',
+    aliases: ['mi'],
+    label: 'Mistral AI',
+    emoji: '🌀',
+    sessions: mistralSessions,
+    endpointPath: '/ai/mistral',
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
 
   makeChatCommand({
     name: 'groq',
+    aliases: ['groqai'],
     label: 'Groq AI',
     emoji: '⚡',
     sessions: groqSessions,
-    endpointPath: '/ai/gpt',
+    endpointPath: '/ai/chatgpt4',
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
 
   makeChatCommand({
-    name: 'gpt',
-    label: 'GPT AI',
-    emoji: '🧠',
-    sessions: gptSessions,
-    endpointPath: '/ai/gpt',
+    name: 'gemini',
+    aliases: ['gai'],
+    label: 'Gemini AI',
+    emoji: '🤖',
+    sessions: geminiSessions,
+    endpointPath: '/ai/gpt4',
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
 
-  // ── WORM (uncensored, own backend — no fallback since it calls
-  // askUncensored() directly instead of Keith/BK9) ────────────────────────
+  // ── WORM (uncensored) ───────────────────────────────────────────────────
   {
     name: 'worm',
     aliases: ['wormgpt', 'wgpt', 'dark', 'darkgpt'],
@@ -249,7 +259,7 @@ Created by Isaac and Muarabu.
     },
   },
 
-  // ── DALL (Image generation via Pollinations — free, no key) ─────────────
+  // ── DALL (Image generation via Pollinations) ─────────────────────────────
   {
     name: 'dall',
     description: 'Generate AI image. Usage: .dall your prompt',
@@ -273,7 +283,7 @@ Created by Isaac and Muarabu.
     },
   },
 
-  // ── BING (uses Gemini — free) ────────────────────────────────────────────
+  // ── BING (via Gemini 2.5 Flash) ─────────────────────────────────────────
   {
     name: 'bing',
     description: 'Ask Bing-style AI. Usage: .bing your question',
@@ -293,7 +303,7 @@ Created by Isaac and Muarabu.
         );
 
         const reply = res?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!reply) throw new Error('No response');
+        if (!reply) throw new Error('No response from Gemini API');
 
         await sock.sendMessage(jid, { text: `🔍 *Bing AI*\n\n${reply}`, edit: thinkingMsg.key });
       } catch (e) {
@@ -302,7 +312,7 @@ Created by Isaac and Muarabu.
     },
   },
 
-  // ── UPSCALE (via Pollinations — free) ───────────────────────────────────
+  // ── UPSCALE (via Pollinations) ──────────────────────────────────────────
   {
     name: 'upscale',
     description: 'Upscale an image using AI. Reply to an image with .upscale',
@@ -337,3 +347,4 @@ Created by Isaac and Muarabu.
   },
 
 ];
+
