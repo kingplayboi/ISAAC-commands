@@ -8,7 +8,7 @@ module.exports = {
     const jid = msg.key.remoteJid;
 
     if (!isOwner(msg)) {
-      return sock.sendMessage(jid, { text: '❌ Only the bot owner can use this command.' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ Only the bot owner can execute this command dickhead.' }, { quoted: msg });
     }
 
     const mode = (args[0] || '').toLowerCase();
