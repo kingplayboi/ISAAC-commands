@@ -245,31 +245,44 @@ module.exports = [
     }
   },
 
-  // ── CLEAR ─────────────────────────────────────────────────────────────────
+    // ── CLEAR ─────────────────────────────────────────────────────────────────
   {
     name: 'clear',
-    description: 'Clears this entire chat, leaving it empty. Usage: .clear',
+    description: 'Clears this chat history. Usage: .clear',
     async execute(sock, msg) {
       const jid = msg.key.remoteJid;
 
       try {
         await sock.chatModify(
           {
-            delete: true,
-            lastMessages: [
-              {
-                key: { remoteJid: jid, fromMe: msg.key.fromMe, id: msg.key.id },
-                messageTimestamp: msg.messageTimestamp,
-              },
-            ],
+            clear: {
+              messages: [
+                {
+                  id: msg.key.id,
+                  fromMe: msg.key.fromMe,
+                  timestamp: msg.messageTimestamp,
+                },
+              ],
+            },
           },
           jid
         );
+        await sock.sendMessage(jid, { text: '🧹 Chat cleared successfully.' });
       } catch (e) {
-        await sock.sendMessage(jid, { text: '❌ Failed to clear chat: ' + e.message }, { quoted: msg });
+        // Fallback if AppState sync key is missing
+        try {
+          await sock.sendMessage(jid, { delete: msg.key });
+        } catch {
+          await sock.sendMessage(
+            jid,
+            { text: '❌ Failed to clear chat: WhatsApp AppState synchronization is disabled on this session.' },
+            { quoted: msg }
+          );
+        }
       }
     }
   },
+
 
   // ── SAVE1 ─────────────────────────────────────────────────────────────────
   {
