@@ -6,7 +6,6 @@ require('dotenv').config();
 const GEMINI_KEY = process.env.GEMINI_KEY;
 const { askUncensored } = require('../lib/wormgpt');
 const { KEITH_BASE } = require('../config/apis');
-const BK9_BASE = 'https://api.bk9.dev';
 
 const geminiSessions = new Map();
 const groqSessions = new Map();
@@ -79,23 +78,16 @@ function downloadImage(url) {
   });
 }
 
-// Tries primary Keith endpoint first; on any failure, falls back to BK9
+// Direct API fetcher (no fallback)
 async function getAIReply(endpointPath, prompt) {
   const encoded = encodeURIComponent(prompt);
+  const json = await httpsGetJSON(`${KEITH_BASE}${endpointPath}?q=${encoded}`);
 
-  try {
-    const json = await httpsGetJSON(`${KEITH_BASE}${endpointPath}?q=${encoded}`);
-    if (!json.status || !json.result) throw new Error(json.error || 'Keith API returned invalid status');
-    return { reply: typeof json.result === 'string' ? json.result : JSON.stringify(json.result), usedFallback: false };
-  } catch (primaryErr) {
-    try {
-      const json = await httpsGetJSON(`${BK9_BASE}/ai/llama?q=${encoded}`);
-      if (!json.status) throw new Error(json.err || 'BK9 API returned status:false');
-      return { reply: json.BK9, usedFallback: true };
-    } catch (fallbackErr) {
-      throw new Error(`Primary API failed: ${primaryErr.message} — Fallback API failed: ${fallbackErr.message}`);
-    }
+  if (!json.status || !json.result) {
+    throw new Error(json.error || 'API returned status false or missing result.');
   }
+
+  return typeof json.result === 'string' ? json.result : JSON.stringify(json.result);
 }
 
 // Runs a memory-backed AI chat command
@@ -132,7 +124,7 @@ function makeChatCommand({ name, aliases, label, emoji, sessions, endpointPath, 
         const history = getHistory(sessions, userId);
         const prompt = buildPrompt(history, text);
 
-        const { reply: rawReply, usedFallback } = await getAIReply(endpointPath, prompt);
+        const rawReply = await getAIReply(endpointPath, prompt);
 
         const reply = rawReply
           .replace(brandReplace[0], brandReplace[1])
@@ -141,11 +133,9 @@ function makeChatCommand({ name, aliases, label, emoji, sessions, endpointPath, 
         pushHistory(sessions, userId, 'user', text);
         pushHistory(sessions, userId, 'assistant', reply);
 
-        const fallbackNote = usedFallback ? '\n\n_(via backup AI — primary was unavailable)_' : '';
-
         await sock.sendMessage(
           jid,
-          { text: `${emoji} *${label}*\n\n${reply}${fallbackNote}`, edit: thinkingMsg.key },
+          { text: `${emoji} *${label}*\n\n${reply}`, edit: thinkingMsg.key },
           { quoted: msg }
         );
       } catch (err) {
@@ -161,13 +151,32 @@ function makeChatCommand({ name, aliases, label, emoji, sessions, endpointPath, 
 
 module.exports = [
 
-  // ── Operational Keith Endpoints ──────────────────────────────────────────
   makeChatCommand({
     name: 'gpt',
     aliases: ['gpt4', 'chatgpt'],
     label: 'GPT-4 AI',
     emoji: '🧠',
     sessions: gptSessions,
+    endpointPath: '/ai/gpt4',
+    brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
+  }),
+
+  makeChatCommand({
+    name: 'groq',
+    aliases: ['groqai'],
+    label: 'Groq AI',
+    emoji: '⚡',
+    sessions: groqSessions,
+    endpointPath: '/ai/gpt4',
+    brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
+  }),
+
+  makeChatCommand({
+    name: 'gemini',
+    aliases: ['gai'],
+    label: 'Gemini AI',
+    emoji: '🤖',
+    sessions: geminiSessions,
     endpointPath: '/ai/gpt4',
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
@@ -182,27 +191,7 @@ module.exports = [
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
 
-  makeChatCommand({
-    name: 'groq',
-    aliases: ['groqai'],
-    label: 'Groq AI',
-    emoji: '⚡',
-    sessions: groqSessions,
-    endpointPath: '/ai/chatgpt4',
-    brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
-  }),
-
-  makeChatCommand({
-    name: 'gemini',
-    aliases: ['gai'],
-    label: 'Gemini AI',
-    emoji: '🤖',
-    sessions: geminiSessions,
-    endpointPath: '/ai/gpt4',
-    brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
-  }),
-
-  // ── WORM (uncensored) ───────────────────────────────────────────────────
+  // ── WORM (uncensored, via lib/wormgpt) ──────────────────────────────────
   {
     name: 'worm',
     aliases: ['wormgpt', 'wgpt', 'dark', 'darkgpt'],
