@@ -1,9 +1,6 @@
 // commands/void.js
 
-const axios = require("axios");
-const { KEITH_BASE } = require('../config/apis');
-
-const API = KEITH_BASE;
+const { askUncensored } = require('../lib/wormgpt');
 
 const SYSTEM_PROMPT = `
 You are VOID, the technical intelligence core inside ISAAC-MD. 🤖🔥
@@ -213,36 +210,22 @@ Examples:
       );
     }
 
+    const thinkingMsg = await sock.sendMessage(
+      jid,
+      { text: '🌌 *VOID AI is thinking...*' },
+      { quoted: msg }
+    );
+
     try {
-      await sock.sendPresenceUpdate('composing', jid);
+      const combined = `${SYSTEM_PROMPT}\n\nUser: ${prompt}\n\nVOID:`;
 
-      const combined = `${SYSTEM_PROMPT}
-
-User: ${prompt}
-
-VOID:`;
-
-      const { data } = await axios.get(
-        `${API}/ai/wormgpt?q=${encodeURIComponent(combined)}`,
-        { timeout: 120000 }
-      );
-
-      if (!data?.status || !data?.result) {
-        throw new Error('WormGPT API returned no usable response');
-      }
-
-      const reply =
-        typeof data.result === 'string'
-          ? data.result
-          : data.result.response ||
-            data.result.answer ||
-            data.result.text ||
-            JSON.stringify(data.result, null, 2);
+      const reply = await askUncensored(combined);
 
       await sock.sendMessage(
         jid,
         {
-          text: `🌌 *VOID AI*\n\n${reply}`
+          text: `🌌 *VOID AI*\n\n${reply}`,
+          edit: thinkingMsg.key
         },
         { quoted: msg }
       );
@@ -253,15 +236,12 @@ VOID:`;
       await sock.sendMessage(
         jid,
         {
-          text: `❌ *VOID ERROR*\n\n${err.message}`
+          text: `❌ *VOID ERROR*\n\n${err.message}`,
+          edit: thinkingMsg.key
         },
         { quoted: msg }
       );
-
-    } finally {
-      try {
-        await sock.sendPresenceUpdate('paused', jid);
-      } catch {}
     }
   }
 };
+
