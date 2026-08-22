@@ -44,7 +44,6 @@ module.exports = {
 ┗ WelcomeGoodbye: ${onOff(settingsStore.get('welcomegoodbye', false))}
 
 *💬 Bot Behaviour*
-┣ GPTDM: ${onOff(settingsStore.get('gptdm', false))}
 ┣ Mode: 🌐 ${settingsStore.get('mode', 'public').toUpperCase()}
 ┣ Prefix: ${settingsStore.get('prefix', config.prefix)}
 ┣ MenuType: 📋 ${settingsStore.get('menutype', 'list').toUpperCase()}

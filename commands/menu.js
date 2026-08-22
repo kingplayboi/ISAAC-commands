@@ -77,7 +77,7 @@ const categories = {
     'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'amute', 'aunmute', 'ban', 'unban', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners'],
     'SETTINGS': ['anticall', 'autoread', 'autorecording', 'autotyping', 'mode', 'prefix', 'autoview', 'pdm', 'zushi'],
     'DOWNLOAD': ['download', 'igstory', 'pindl', 'play2', 'video', 'video2', 'audio', 'spotify', 'play', 'tiktok', 'ig', 'fb', 'twitter', 'song', 'shazam', 'lyrics', 'lyrics2'],
-    'AI': ['gemini', 'upload', 'imagine', 'vision2', 'groq', 'mi', 'worm', 'gpt', 'dall', 'bing', 'upscale', 'vision', 'void', 'claude', 'wormgpt', 'tts', 'gptdm'],
+    'AI': ['gemini', 'upload', 'imagine', 'vision2', 'groq', 'mi', 'worm', 'gpt', 'dall', 'bing', 'upscale', 'vision', 'void', 'claude', 'wormgpt', 'tts'],
     'USER': ['block', 'unblock', 'pp', 'fullpp', 'jid', 'gjid', 'left', 'ison'],
     'TOOLS': ['fancy', 'webscan', 'zip', 'screenshot', 'gitclone', 'apk', 'clearcache', 'qr', 'zodiac', 'url', 'imagesearch', 'define'],
     'SECURITY': ['antifake', 'antigm', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
