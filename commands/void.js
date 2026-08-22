@@ -1,6 +1,6 @@
 // commands/void.js
 
-const { askUncensored } = require('../lib/wormgpt');
+const { askUncensored, wormgptSessions, getHistory, pushHistory, buildPrompt } = require('../lib/wormgpt');
 
 const SYSTEM_PROMPT = `
 You are VOID, the technical intelligence core inside ISAAC-MD. 🤖🔥
@@ -187,61 +187,50 @@ End responses naturally when appropriate with:
 module.exports = {
   name: 'void',
   aliases: ['v', 'voidai'],
-  description: 'Advanced technical AI assistant',
+  description: 'Advanced technical AI assistant with conversation memory. Usage: .void your question',
 
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
-    const prompt = args.join(' ').trim();
+    const text = args.join(' ').trim();
+    const userId = msg.key.participant || jid;
 
-    if (!prompt) {
+    if (!text) {
       return sock.sendMessage(
         jid,
-        {
-          text: `🌌 *VOID AI*
-
-Usage:
-.void <question>
-
-Examples:
-.void who are you
-.void fix this Node.js error`
-        },
+        { text: '❌ Usage: .void your question\n\n💡 Use .void -clear to reset conversation history.' },
         { quoted: msg }
       );
     }
 
-    const thinkingMsg = await sock.sendMessage(
-      jid,
-      { text: '🌌 *VOID AI is thinking...*' },
-      { quoted: msg }
-    );
+    if (text === '-clear') {
+      wormgptSessions.delete(userId);
+      return sock.sendMessage(jid, { text: '🧹 *VOID AI memory cleared!* Fresh start.' }, { quoted: msg });
+    }
+
+    const thinkingMsg = await sock.sendMessage(jid, { text: '🌌 *VOID AI is thinking...*' }, { quoted: msg });
 
     try {
-      const combined = `${SYSTEM_PROMPT}\n\nUser: ${prompt}\n\nVOID:`;
+      const history = getHistory(wormgptSessions, userId);
+      const prompt = buildPrompt(history, text);
+      const combined = `${SYSTEM_PROMPT}\n\n${prompt}\n\nVOID:`;
 
       const reply = await askUncensored(combined);
 
+      pushHistory(wormgptSessions, userId, 'user', text);
+      pushHistory(wormgptSessions, userId, 'assistant', reply);
+
       await sock.sendMessage(
         jid,
-        {
-          text: `🌌 *VOID AI*\n\n${reply}`,
-          edit: thinkingMsg.key
-        },
+        { text: `🌌 *VOID AI*\n\n${reply}`, edit: thinkingMsg.key },
         { quoted: msg }
       );
-
-    } catch (err) {
-      console.error('[VOID ERROR]', err);
-
+    } catch (e) {
       await sock.sendMessage(
         jid,
-        {
-          text: `❌ *VOID ERROR*\n\n${err.message}`,
-          edit: thinkingMsg.key
-        },
+        { text: '❌ VOID error: ' + e.message, edit: thinkingMsg.key },
         { quoted: msg }
       );
     }
-  }
+  },
 };
 
