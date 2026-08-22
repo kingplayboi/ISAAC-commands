@@ -1,6 +1,25 @@
 // commands/void.js
 
-const { askUncensored, wormgptSessions, getHistory, pushHistory, buildPrompt } = require('../lib/wormgpt');
+const { askUncensored } = require('../lib/wormgpt');
+
+// Local session store for VOID conversation memory
+const voidSessions = new Map();
+
+function getHistory(userId) {
+  if (!voidSessions.has(userId)) voidSessions.set(userId, []);
+  return voidSessions.get(userId);
+}
+
+function pushHistory(userId, role, content) {
+  const history = getHistory(userId);
+  history.push({ role, content });
+  if (history.length > 10) history.shift(); // Keep last 10 messages
+}
+
+function buildPrompt(history, newPrompt) {
+  if (!history.length) return newPrompt;
+  return history.map(h => `${h.role === 'user' ? 'User' : 'VOID'}: ${h.content}`).join('\n') + `\nUser: ${newPrompt}`;
+}
 
 const SYSTEM_PROMPT = `
 You are VOID, the technical intelligence core inside ISAAC-MD. 🤖🔥
@@ -52,21 +71,21 @@ module.exports = {
     }
 
     if (text === '-clear') {
-      wormgptSessions.delete(userId);
+      voidSessions.delete(userId);
       return sock.sendMessage(jid, { text: '🧹 *VOID AI memory cleared!* Fresh start.' }, { quoted: msg });
     }
 
     const thinkingMsg = await sock.sendMessage(jid, { text: '🌌 *VOID AI is thinking...*' }, { quoted: msg });
 
     try {
-      const history = getHistory(wormgptSessions, userId);
+      const history = getHistory(userId);
       const userPrompt = buildPrompt(history, text);
       const combined = `${SYSTEM_PROMPT.trim()}\n\n${userPrompt}\n\nVOID:`;
 
       const reply = await askUncensored(combined);
 
-      pushHistory(wormgptSessions, userId, 'user', text);
-      pushHistory(wormgptSessions, userId, 'assistant', reply);
+      pushHistory(userId, 'user', text);
+      pushHistory(userId, 'assistant', reply);
 
       await sock.sendMessage(
         jid,
