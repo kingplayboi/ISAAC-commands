@@ -13,7 +13,7 @@ function getHistory(userId) {
 function pushHistory(userId, role, content) {
   const history = getHistory(userId);
   history.push({ role, content });
-  if (history.length > 10) history.shift(); // Keep last 10 messages
+  if (history.length > 50) history.shift(); // Keep last 50 messages
 }
 
 function buildPrompt(history, newPrompt) {
