@@ -245,21 +245,35 @@ module.exports = [
     }
   },
 
-    // ── CLEAR ─────────────────────────────────────────────────────────────────
+      // ── CLEAR ─────────────────────────────────────────────────────────────────
   {
     name: 'clear',
-    description: 'Clears this chat history. Usage: .clear',
+    aliases: ['clearchat', 'deletechat'],
+    description: 'Clears messages or chat history.',
     async execute(sock, msg) {
-      const jid = msg.key.remoteJid;
+      const rawJid = msg.key.remoteJid;
+      const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
+        ? msg.key.remoteJidAlt
+        : rawJid;
+
+      const { isOwner } = require('../utils/isOwner');
+      if (!isOwner(msg)) {
+        return await sock.sendMessage(
+          jid,
+          { text: '❌ *Only the bot owner can clear chats.*' },
+          { quoted: msg }
+        );
+      }
 
       try {
+        // Attempting chat clear via Baileys chatModify
         await sock.chatModify(
           {
             clear: {
               messages: [
                 {
                   id: msg.key.id,
-                  fromMe: msg.key.fromMe,
+                  fromMe: msg.key.fromMe || false,
                   timestamp: msg.messageTimestamp,
                 },
               ],
@@ -267,21 +281,25 @@ module.exports = [
           },
           jid
         );
-        await sock.sendMessage(jid, { text: '🧹 Chat cleared successfully.' });
+
+        await sock.sendMessage(jid, { text: '🧹 *Chat cleared successfully.*' });
       } catch (e) {
-        // Fallback if AppState sync key is missing
+        console.error('[CLEAR CHAT ERROR]', e);
+
+        // Fallback: Delete the triggering message directly if chatModify fails
         try {
           await sock.sendMessage(jid, { delete: msg.key });
-        } catch {
+        } catch (err) {
           await sock.sendMessage(
             jid,
-            { text: '❌ Failed to clear chat: WhatsApp AppState synchronization is disabled on this session.' },
+            { text: '❌ *Failed to clear chat:* AppState sync is unavailable on this session.' },
             { quoted: msg }
           );
         }
       }
     }
   },
+
 
 
   // ── SAVE1 ─────────────────────────────────────────────────────────────────
