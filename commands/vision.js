@@ -1,9 +1,9 @@
 const axios = require('axios');
 const FormData = require('form-data');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { KEITH_BASE } = require('../config/apis');
+
+const API = KEITH_BASE;
 
 async function uploadToCatbox(buffer, filename) {
   const form = new FormData();
@@ -15,26 +15,42 @@ async function uploadToCatbox(buffer, filename) {
 
 module.exports = {
   name: 'vision',
-  aliases: ['imgai', 'analyze', 'llamavision'],
-  description: 'Analyze an image with LLaMA Vision AI (quote an image)',
+  aliases: ['imgai', 'analyze', 'geminivision'],
+  description: 'Analyze an image with Vision AI (quote an image)',
 
   async execute(sock, msg, args) {
-    const jid = msg.key.remoteJid;
+    const rawJid = msg.key.remoteJid;
+    const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
+      ? msg.key.remoteJidAlt
+      : rawJid;
+
     const ctx = msg.message?.extendedTextMessage?.contextInfo;
     const quoted = ctx?.quotedMessage;
     const question = args.join(' ').trim();
 
     if (!quoted?.imageMessage) {
-      return await sock.sendMessage(jid, { text: '📌 Reply to an image with a question.\nExample: *.vision what is this?*' }, { quoted: msg });
+      return await sock.sendMessage(
+        jid,
+        { text: '📌 Reply to an image with a question.\nExample: *.vision what is this?*' },
+        { quoted: msg }
+      );
     }
+
     if (!question) {
-      return await sock.sendMessage(jid, { text: '❌ Provide a question about the image!\nExample: *.vision what is in this image?*' }, { quoted: msg });
+      return await sock.sendMessage(
+        jid,
+        { text: '❌ Provide a question about the image!\nExample: *.vision what is in this image?*' },
+        { quoted: msg }
+      );
     }
+
+    const thinkingMsg = await sock.sendMessage(
+      jid,
+      { text: '👁️ *Analyzing your image...*' },
+      { quoted: msg }
+    );
 
     try {
-      await sock.sendMessage(jid, { react: { text: '🤖', key: msg.key } });
-      await sock.sendMessage(jid, { text: '🔍 Analyzing your image...' }, { quoted: msg });
-
       const buffer = await downloadMediaMessage(
         { key: { remoteJid: jid, id: ctx.stanzaId, fromMe: false, participant: ctx.participant }, message: quoted },
         'buffer',
@@ -45,18 +61,36 @@ module.exports = {
       const imageUrl = await uploadToCatbox(buffer, 'image.jpg');
 
       const res = await axios.get(
-        `https://api.bk9.dev/ai/vision?q=${encodeURIComponent(question)}&image_url=${encodeURIComponent(imageUrl)}&model=meta-llama/llama-4-scout-17b-16e-instruct`
+        `${API}/ai/vision?image=${encodeURIComponent(imageUrl)}&q=${encodeURIComponent(question)}`,
+        { timeout: 120000 }
       );
       const data = res.data;
 
-      if (!data?.status || !data?.BK9) {
-        return await sock.sendMessage(jid, { text: '❌ No response from Vision AI. Try again.' }, { quoted: msg });
+      if (!data?.status || !data?.result) {
+        return await sock.sendMessage(
+          jid,
+          { text: '❌ No response from Vision AI. Try again.', edit: thinkingMsg.key },
+          { quoted: msg }
+        );
       }
 
-      await sock.sendMessage(jid, { text: `🤖 *Vision Analysis*\n\n${data.BK9}` }, { quoted: msg });
+      const replyText = typeof data.result === 'string'
+        ? data.result
+        : data.result.response || JSON.stringify(data.result);
+
+      await sock.sendMessage(
+        jid,
+        { text: `👁️ *Vision Analysis*\n\n${replyText}`, edit: thinkingMsg.key },
+        { quoted: msg }
+      );
     } catch (error) {
       console.error('[VISION ERROR]', error);
-      await sock.sendMessage(jid, { text: '❌ Failed to analyze image.' }, { quoted: msg });
+      await sock.sendMessage(
+        jid,
+        { text: '❌ Failed to analyze image: ' + error.message, edit: thinkingMsg.key },
+        { quoted: msg }
+      );
     }
   },
 };
+

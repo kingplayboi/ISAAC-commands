@@ -13,21 +13,40 @@ async function uploadToCatbox(buffer, filename) {
 
 module.exports = {
   name: 'vision2',
-  aliases: ['imgai2', 'analyze2', 'geminivision'],
+  aliases: ['v2', 'analyze2', 'imgai2'],
   description: 'Analyze an image with AI (quote an image)',
 
   async execute(sock, msg, args) {
-    const jid = msg.key.remoteJid;
+    const rawJid = msg.key.remoteJid;
+    const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
+      ? msg.key.remoteJidAlt
+      : rawJid;
+
     const ctx = msg.message?.extendedTextMessage?.contextInfo;
     const quoted = ctx?.quotedMessage;
     const question = args.join(' ').trim();
 
     if (!quoted?.imageMessage) {
-      return await sock.sendMessage(jid, { text: '📌 Reply to an image message to analyze it' }, { quoted: msg });
+      return await sock.sendMessage(
+        jid,
+        { text: '📌 Reply to an image message to analyze it.' },
+        { quoted: msg }
+      );
     }
+
     if (!question) {
-      return await sock.sendMessage(jid, { text: '❌ Provide a question/instruction!' }, { quoted: msg });
+      return await sock.sendMessage(
+        jid,
+        { text: '❌ Provide a question/instruction!\nExample: *.vision2 what is in this image?*' },
+        { quoted: msg }
+      );
     }
+
+    const thinkingMsg = await sock.sendMessage(
+      jid,
+      { text: '🤖 *Analyzing your image...*' },
+      { quoted: msg }
+    );
 
     try {
       const buffer = await downloadMediaMessage(
@@ -39,22 +58,37 @@ module.exports = {
 
       const imageUrl = await uploadToCatbox(buffer, 'image.jpg');
 
-      await sock.sendMessage(jid, { react: { text: '🤖', key: msg.key } });
-      await sock.sendMessage(jid, { text: 'A moment analyzing your image...' }, { quoted: msg });
-
       const res = await axios.get(
-        `${KEITH_BASE}/ai/vision?image=${encodeURIComponent(imageUrl)}&q=${encodeURIComponent(question)}`
+        `${KEITH_BASE}/ai/vision?image=${encodeURIComponent(imageUrl)}&q=${encodeURIComponent(question)}`,
+        { timeout: 120000 }
       );
       const result = res.data;
 
       if (!result?.status || !result?.result) {
-        return await sock.sendMessage(jid, { text: '❌ No response from Vision AI' }, { quoted: msg });
+        return await sock.sendMessage(
+          jid,
+          { text: '❌ No response from Vision AI. Try again.', edit: thinkingMsg.key },
+          { quoted: msg }
+        );
       }
 
-      await sock.sendMessage(jid, { text: result.result }, { quoted: msg });
+      const responseText = typeof result.result === 'string'
+        ? result.result
+        : result.result.response || JSON.stringify(result.result);
+
+      await sock.sendMessage(
+        jid,
+        { text: `👁️ *Vision Analysis*\n\n${responseText}`, edit: thinkingMsg.key },
+        { quoted: msg }
+      );
     } catch (error) {
       console.error('[VISION2 ERROR]', error);
-      await sock.sendMessage(jid, { text: '❌ Failed to analyze image.' }, { quoted: msg });
+      await sock.sendMessage(
+        jid,
+        { text: `❌ Failed to analyze image: ${error.message}`, edit: thinkingMsg.key },
+        { quoted: msg }
+      );
     }
   },
 };
+
