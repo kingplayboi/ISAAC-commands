@@ -1,14 +1,27 @@
 const axios = require('axios');
 const FormData = require('form-data');
+const mime = require('mime-types');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { KEITH_BASE } = require('../config/apis');
 
-async function uploadToCatbox(buffer, filename) {
+async function uploadToUguu(buffer, filename) {
+  const mimeType = mime.lookup(filename) || 'image/jpeg';
   const form = new FormData();
-  form.append('reqtype', 'fileupload');
-  form.append('fileToUpload', buffer, { filename });
-  const res = await axios.post('https://catbox.moe/user/api.php', form, { headers: form.getHeaders() });
-  return res.data;
+  form.append('files[]', buffer, { filename, contentType: mimeType });
+
+  const res = await axios.post('https://uguu.se/upload.php', form, {
+    headers: {
+      ...form.getHeaders(),
+      origin: 'https://uguu.se',
+      referer: 'https://uguu.se/',
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+    },
+  });
+
+  if (res.data?.success && res.data?.files?.[0]?.url) {
+    return res.data.files[0].url;
+  }
+  throw new Error('Media upload failed');
 }
 
 module.exports = {
@@ -56,7 +69,7 @@ module.exports = {
         { reuploadRequest: sock.updateMediaMessage }
       );
 
-      const imageUrl = await uploadToCatbox(buffer, 'image.jpg');
+      const imageUrl = await uploadToUguu(buffer, 'image.jpg');
 
       const res = await axios.get(
         `${KEITH_BASE}/ai/vision?image=${encodeURIComponent(imageUrl)}&q=${encodeURIComponent(question)}`,
