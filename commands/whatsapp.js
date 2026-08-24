@@ -313,16 +313,77 @@ module.exports = [
 
 
 
-  // ── SAVE1 ─────────────────────────────────────────────────────────────────
+    // ── SAVE1 ─────────────────────────────────────────────────────────────────
   {
     name: 'save1',
-    description: 'Screenshot/save a status. Reply to a status with .save1',
+    aliases: ['savestatus', 'statusdownload'],
+    description: 'Saves and forwards a quoted WhatsApp status to the current chat.',
     async execute(sock, msg) {
-      const jid = msg.key.remoteJid;
-      await sock.sendMessage(jid, {
-        text: '⚠️ Status saving requires the bot to be watching statuses.\nMake sure autoread status is enabled.'
-      }, { quoted: msg });
+      const rawJid = msg.key.remoteJid;
+      const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
+        ? msg.key.remoteJidAlt
+        : rawJid;
+
+      const contextInfo = msg.message?.extendedTextMessage?.contextInfo;
+      const quotedMsg = contextInfo?.quotedMessage;
+
+      if (!quotedMsg) {
+        return await sock.sendMessage(
+          jid,
+          { text: '⚠️ *Please reply to a WhatsApp status with .save1*' },
+          { quoted: msg }
+        );
+      }
+
+      try {
+        const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
+        // Identify message type within quoted message
+        const isImage = quotedMsg.imageMessage;
+        const isVideo = quotedMsg.videoMessage;
+        const isAudio = quotedMsg.audioMessage;
+        const isText = quotedMsg.conversation || quotedMsg.extendedTextMessage?.text;
+
+        if (isImage || isVideo || isAudio) {
+          // Download status buffer
+          const buffer = await downloadMediaMessage(
+            { message: quotedMsg },
+            'buffer',
+            {}
+          );
+
+          const caption = isImage?.caption || isVideo?.caption || '';
+
+          if (isImage) {
+            await sock.sendMessage(jid, { image: buffer, caption }, { quoted: msg });
+          } else if (isVideo) {
+            await sock.sendMessage(jid, { video: buffer, caption }, { quoted: msg });
+          } else if (isAudio) {
+            await sock.sendMessage(jid, { audio: buffer, mimetype: 'audio/mp4' }, { quoted: msg });
+          }
+        } else if (isText) {
+          await sock.sendMessage(
+            jid,
+            { text: `📝 *Status Text:*\n\n${isText}` },
+            { quoted: msg }
+          );
+        } else {
+          await sock.sendMessage(
+            jid,
+            { text: '❌ *Unsupported status format.*' },
+            { quoted: msg }
+          );
+        }
+      } catch (err) {
+        console.error('[SAVE1 ERROR]', err);
+        await sock.sendMessage(
+          jid,
+          { text: '❌ *Failed to download status media. Make sure it has not expired.*' },
+          { quoted: msg }
+        );
+      }
     }
   },
+
 
 ];
