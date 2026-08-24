@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 module.exports = {
   name: 'script',
@@ -7,28 +8,47 @@ module.exports = {
   description: 'Shows the ISAAC repository information.',
 
   async execute(sock, msg) {
-    const jid = msg.key.remoteJid;
+    const rawJid = msg.key.remoteJid;
+    const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
+      ? msg.key.remoteJidAlt
+      : rawJid;
 
-    const senderName =
-      msg.pushName ||
-      msg.verifiedBizName ||
-      'User';
-
+    const senderName = msg.pushName || msg.verifiedBizName || 'User';
     const imagePath = path.join(__dirname, '../assets/script.jpg');
 
-    const caption = `
+    const repoOwner = 'kingplayboi';
+    const repoName = 'ISAAC';
+
+    try {
+      // Fetch repository data from GitHub API
+      const { data } = await axios.get(`https://api.github.com/repos/${repoOwner}/${repoName}`);
+
+      const createdDate = new Date(data.created_at).toLocaleDateString("en-KE", {
+        day: "numeric", month: "short", year: "numeric"
+      });
+
+      const lastUpdateDate = new Date(data.updated_at).toLocaleDateString("en-KE", {
+        day: "numeric", month: "short", year: "numeric"
+      });
+
+      const caption = `
 Hello 👋 *${senderName},*
 
 ╔═══〔 🔥 ISAAC TECH 🔥 〕═══╗
 ║    The Ultimate WhatsApp Bot
 ╚═══════════════════════════╝
 
-🔷 *GitHub Repo:*
-↳ https://github.com/kingplayboi/ISAAC
-⭐ Please star and fork the repository!
+╭───────────────────
+│⭐ *Stars:* ${data.stargazers_count}
+│🍴 *Forks:* ${data.forks_count}
+│📅 *Created:* ${createdDate}
+│🔄 *Last Update:* ${lastUpdateDate}
+│👨‍💻 *Developer:* ${repoOwner}
+╰───────────────────
 
-👨‍💻 *Developer:*
-↳ https://github.com/kingplayboi
+🔷 *GitHub Repo:*
+↳ ${data.html_url}
+⭐ Please star and fork the repository!
 
 🔗 *WhatsApp Pairing:*
 ↳ https://session2-bvny.onrender.com/
@@ -43,17 +63,12 @@ Hello 👋 *${senderName},*
 ━━━━━━━━━━━━━━━━━━━━━━
 🔥 Made on Earth by Humans!
 ❤️ Powered by *ISAAC TECH*
-━━━━━━━━━━━━━━━━━━━━━━
-`.trim();
+━━━━━━━━━━━━━━━━━━━━━━`.trim();
 
-    try {
       if (fs.existsSync(imagePath)) {
         await sock.sendMessage(
           jid,
-          {
-            image: fs.readFileSync(imagePath),
-            caption
-          },
+          { image: fs.readFileSync(imagePath), caption },
           { quoted: msg }
         );
       } else {
@@ -65,12 +80,9 @@ Hello 👋 *${senderName},*
       }
     } catch (error) {
       console.error('[SCRIPT ERROR]', error);
-
       await sock.sendMessage(
         jid,
-        {
-          text: '❌ Failed to load script information.'
-        },
+        { text: '❌ Failed to load script information.' },
         { quoted: msg }
       );
     }
