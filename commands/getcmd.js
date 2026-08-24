@@ -8,7 +8,7 @@ module.exports = {
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
 
-    if (!isDev(msg)) {
+    if (!isDev(msg, sock)) {
       return sock.sendMessage(jid, { text: '❌ This command is restricted to ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ dumbass.' }, { quoted: msg });
     }
 
