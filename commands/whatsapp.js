@@ -245,11 +245,11 @@ module.exports = [
     }
   },
 
-      // ── CLEAR ─────────────────────────────────────────────────────────────────
+        // ── CLEAR ─────────────────────────────────────────────────────────────────
   {
     name: 'clear',
     aliases: ['clearchat', 'deletechat'],
-    description: 'Clears messages or chat history.',
+    description: 'Clears all messages in this chat.',
     async execute(sock, msg) {
       const rawJid = msg.key.remoteJid;
       const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
@@ -266,7 +266,7 @@ module.exports = [
       }
 
       try {
-        // Attempting chat clear via Baileys chatModify
+        // Fetch recent messages to form a valid deletion anchor
         await sock.chatModify(
           {
             clear: {
@@ -282,17 +282,28 @@ module.exports = [
           jid
         );
 
-        await sock.sendMessage(jid, { text: '🧹 *Chat cleared successfully.*' });
+        await sock.sendMessage(jid, { text: '🧹 *Chat history cleared successfully.*' });
       } catch (e) {
         console.error('[CLEAR CHAT ERROR]', e);
 
-        // Fallback: Delete the triggering message directly if chatModify fails
+        // Fallback: Empty the chat store if AppState sync is missing
         try {
-          await sock.sendMessage(jid, { delete: msg.key });
+          await sock.chatModify(
+            {
+              delete: true,
+              lastMessages: [
+                {
+                  key: msg.key,
+                  messageTimestamp: msg.messageTimestamp,
+                },
+              ],
+            },
+            jid
+          );
         } catch (err) {
           await sock.sendMessage(
             jid,
-            { text: '❌ *Failed to clear chat:* AppState sync is unavailable on this session.' },
+            { text: '❌ *Failed to clear chat:* WhatsApp multi-device session sync restricted this action.' },
             { quoted: msg }
           );
         }
