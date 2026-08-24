@@ -14,7 +14,7 @@ async function uploadToUguu(buffer, filename) {
       ...form.getHeaders(),
       origin: 'https://uguu.se',
       referer: 'https://uguu.se/',
-      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     },
   });
 
@@ -73,7 +73,13 @@ module.exports = {
 
       const res = await axios.get(
         `${KEITH_BASE}/ai/vision?image=${encodeURIComponent(imageUrl)}&q=${encodeURIComponent(question)}`,
-        { timeout: 120000 }
+        {
+          timeout: 120000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*'
+          }
+        }
       );
       const result = res.data;
 
@@ -87,7 +93,7 @@ module.exports = {
 
       const responseText = typeof result.result === 'string'
         ? result.result
-        : result.result.response || JSON.stringify(result.result);
+        : result.result.response || result.result.text || JSON.stringify(result.result);
 
       await sock.sendMessage(
         jid,
