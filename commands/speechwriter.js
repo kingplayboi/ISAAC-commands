@@ -33,16 +33,15 @@ module.exports = {
         }
       });
 
-      // Navigate through potential nested object layers
-      let speech = data?.result;
+      // Unwrap nested response properties
+      let speech = data?.result?.data?.data?.speech 
+                || data?.result?.data?.speech 
+                || data?.result?.speech 
+                || data?.result?.data 
+                || data?.result;
 
       if (typeof speech === 'object' && speech !== null) {
-        speech = speech.data?.speech || speech.speech || speech.result || speech.text || speech.content;
-      }
-
-      // Fallback stringify if it's still an object
-      if (typeof speech === 'object' && speech !== null) {
-        speech = JSON.stringify(speech, null, 2);
+        speech = speech.speech || speech.text || speech.content || JSON.stringify(speech);
       }
 
       if (!speech || typeof speech !== 'string') {
@@ -64,4 +63,3 @@ module.exports = {
     }
   },
 };
-
