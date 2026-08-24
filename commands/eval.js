@@ -14,7 +14,7 @@ module.exports = {
   async execute(sock, msg, args, commands) {
     const jid = msg.key.remoteJid;
 
-    if (!isDev(msg)) {
+    if (!isDev(msg, sock)) {
       return sock.sendMessage(jid, { text: '❌ Only the bot developer who is ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ can use this command dumbass.' }, { quoted: msg });
     }
 
