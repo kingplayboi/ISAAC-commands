@@ -1,9 +1,10 @@
 const axios = require('axios');
+const { KEITH_BASE } = require('../config/apis');
 
 module.exports = {
   name: 'imagesearch',
   aliases: ['imgsearch', 'gis', 'image'],
-  description: 'Search for up to 10 real Google images. Usage: .imagesearch <query>',
+  description: 'Search for up to 5 real Google images. Usage: .imagesearch <query>',
 
   async execute(sock, msg, args) {
     const rawJid = msg.key.remoteJid;
@@ -21,34 +22,36 @@ module.exports = {
       );
     }
 
-    await sock.sendMessage(
+    const thinkingMsg = await sock.sendMessage(
       jid,
       { text: `🔍 *Searching Google Images for:* "${query}"...` },
       { quoted: msg }
     );
 
     try {
-      // Fetch results from Google Image API endpoint
-      const response = await axios.get(
-        `https://api.vreden.web.id/api/googleimage?query=${encodeURIComponent(query)}`
+      const { data } = await axios.get(
+        `${KEITH_BASE}/api/googleimage?query=${encodeURIComponent(query)}`,
+        { timeout: 60000 }
       );
 
-      const images = response.data?.result || response.data?.data;
+      const images = data?.result || data?.data;
 
-      if (!images || images.length === 0) {
+      if (!images || !Array.isArray(images) || images.length === 0) {
         return await sock.sendMessage(
           jid,
-          { text: `❌ *No images found for "${query}".*` },
+          { text: `❌ *No images found for "${query}".*`, edit: thinkingMsg.key },
           { quoted: msg }
         );
       }
 
-      // Limit results to 10 images maximum
-      const limitList = images.slice(0, 10);
+      // Limit to 5 images to prevent rate limits or slow sends
+      const limitList = images.slice(0, 5);
 
-      // Send each image directly to chat
+      await sock.sendMessage(jid, { delete: thinkingMsg.key }).catch(() => {});
+
       for (let i = 0; i < limitList.length; i++) {
-        const imgUrl = typeof limitList[i] === 'string' ? limitList[i] : limitList[i].url || limitList[i].link;
+        const item = limitList[i];
+        const imgUrl = typeof item === 'string' ? item : item?.url || item?.link;
 
         if (imgUrl) {
           await sock.sendMessage(
@@ -56,34 +59,18 @@ module.exports = {
             {
               image: { url: imgUrl },
               caption: `🖼️ *Result ${i + 1}/${limitList.length} for:* ${query.toUpperCase()}`
-            }
+            },
+            { quoted: msg }
           );
         }
       }
-
     } catch (e) {
       console.error('[IMAGESEARCH ERROR]', e);
-
-      // Fallback API if the primary endpoint fails
-      try {
-        const fallbackRes = await axios.get(
-          `https://api.lolhuman.xyz/api/gimage?apikey=apiKey&query=${encodeURIComponent(query)}`
-        );
-        const fallbackImages = fallbackRes.data?.result?.slice(0, 10) || [];
-
-        for (let i = 0; i < fallbackImages.length; i++) {
-          await sock.sendMessage(jid, {
-            image: { url: fallbackImages[i] },
-            caption: `🖼️ *Result ${i + 1}/${fallbackImages.length} for:* ${query.toUpperCase()}`
-          });
-        }
-      } catch (err) {
-        await sock.sendMessage(
-          jid,
-          { text: `❌ *Error fetching images:* ${e.message}` },
-          { quoted: msg }
-        );
-      }
+      await sock.sendMessage(
+        jid,
+        { text: `❌ *Error fetching images:* ${e.message}`, edit: thinkingMsg.key },
+        { quoted: msg }
+      );
     }
   }
 };
