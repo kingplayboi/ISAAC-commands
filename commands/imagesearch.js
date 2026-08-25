@@ -1,49 +1,69 @@
-/**
- * commands/imagesearch.js
- * Search Pexels for free stock images
- * Requires: PEXELS_API_KEY in .env
- */
+const axios = require('axios');
 
-require('dotenv').config();
-const PEXELS_KEY = process.env.PEXELS_API_KEY;
+// Hardcoded Pexels API key
+const PEXELS_KEY = '22nupLnhgtJu5tHR6EvQpptBBCmWQ5mhNoYkRJ5uNUiuCGczUPnjZa0J';
 
 module.exports = {
   name: 'imagesearch',
-  description: 'Search for images on Pexels. Usage: .imagesearch <query>',
+  aliases: ['imgsearch', 'pexels'],
+  description: 'Search for high quality stock images on Pexels. Usage: .imagesearch <query>',
+
   async execute(sock, msg, args) {
-    const jid = msg.key.remoteJid;
+    const rawJid = msg.key.remoteJid;
+    const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
+      ? msg.key.remoteJidAlt
+      : rawJid;
+
     const query = args.join(' ').trim();
 
     if (!query) {
-      return sock.sendMessage(jid, { text: '❌ Usage: .imagesearch <search term>' }, { quoted: msg });
+      return await sock.sendMessage(
+        jid,
+        { text: '❌ *Usage:* `.imagesearch <search term>`' },
+        { quoted: msg }
+      );
     }
-
-    if (!PEXELS_KEY) {
-      return sock.sendMessage(jid, { text: '❌ Pexels API key not set in .env' }, { quoted: msg });
-    }
-
-    await sock.sendMessage(jid, { text: `🖼️ Searching Pexels for "${query}"...` }, { quoted: msg });
 
     try {
-      const response = await fetch(
+      const response = await axios.get(
         `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=5`,
-        { headers: { Authorization: PEXELS_KEY } }
+        {
+          headers: { Authorization: PEXELS_KEY }
+        }
       );
-      const data = await response.json();
 
-      if (!data.photos?.length) {
-        return sock.sendMessage(jid, { text: `❌ No images found for "${query}".` }, { quoted: msg });
+      const photos = response.data?.photos;
+
+      if (!photos || photos.length === 0) {
+        return await sock.sendMessage(
+          jid,
+          { text: `❌ *No images found for "${query}".*` },
+          { quoted: msg }
+        );
       }
 
-      let out = `🖼️ *PEXELS SEARCH: ${query.toUpperCase()}*\n\n`;
-      data.photos.slice(0, 3).forEach((photo, i) => {
-        out += `${i + 1}. *${photo.photographer}*\n`;
-        out += `   ${photo.src.medium}\n\n`;
-      });
+      // Send the top photo as an image with details as caption
+      const topPhoto = photos[0];
+      const caption = `🖼️ *PEXELS SEARCH:* ${query.toUpperCase()}\n\n` +
+                      `📸 *Photographer:* ${topPhoto.photographer}\n` +
+                      `🔗 *Original:* ${topPhoto.url}`;
 
-      await sock.sendMessage(jid, { text: out });
+      await sock.sendMessage(
+        jid,
+        {
+          image: { url: topPhoto.src.large },
+          caption: caption
+        },
+        { quoted: msg }
+      );
+
     } catch (e) {
-      await sock.sendMessage(jid, { text: `❌ Error: ${e.message}` }, { quoted: msg });
+      console.error('[IMAGESEARCH ERROR]', e);
+      await sock.sendMessage(
+        jid,
+        { text: `❌ *Error searching Pexels:* ${e.message}` },
+        { quoted: msg }
+      );
     }
   }
 };
