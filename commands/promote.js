@@ -1,13 +1,6 @@
-/**
- * commands/promote.js
- * -------------------
- * Promotes a mentioned/replied-to member to group admin. Admin-only.
- *
- * Usage: .promote @user
- *    or: reply to the target's message with .promote
- */
 module.exports = {
   name: 'promote',
+  aliases: ['crown'],
   description: 'Promotes a mentioned member to group admin (admin only).',
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
@@ -46,7 +39,7 @@ module.exports = {
     await sock.groupParticipantsUpdate(jid, [targetJid], 'promote');
     await sock.sendMessage(
       jid,
-      { text: `⬆️ Promoted @${targetJid.split('@')[0]} to admin.`, mentions: [targetJid] },
+      { text: `⬆️ Promoted @${targetJid.split('@')[0]} to admin👑.`, mentions: [targetJid] },
       { quoted: msg }
     );
   },
