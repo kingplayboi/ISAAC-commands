@@ -1,12 +1,9 @@
 const axios = require('axios');
 
-// Hardcoded Pexels API key
-const PEXELS_KEY = '22nupLnhgtJu5tHR6EvQpptBBCmWQ5mhNoYkRJ5uNUiuCGczUPnjZa0J';
-
 module.exports = {
   name: 'imagesearch',
-  aliases: ['imgsearch', 'pexels'],
-  description: 'Search for high quality stock images on Pexels. Usage: .imagesearch <query>',
+  aliases: ['imgsearch', 'gis', 'image'],
+  description: 'Search for up to 10 real Google images. Usage: .imagesearch <query>',
 
   async execute(sock, msg, args) {
     const rawJid = msg.key.remoteJid;
@@ -24,17 +21,21 @@ module.exports = {
       );
     }
 
+    await sock.sendMessage(
+      jid,
+      { text: `🔍 *Searching Google Images for:* "${query}"...` },
+      { quoted: msg }
+    );
+
     try {
+      // Fetch results from Google Image API endpoint
       const response = await axios.get(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=5`,
-        {
-          headers: { Authorization: PEXELS_KEY }
-        }
+        `https://api.vreden.web.id/api/googleimage?query=${encodeURIComponent(query)}`
       );
 
-      const photos = response.data?.photos;
+      const images = response.data?.result || response.data?.data;
 
-      if (!photos || photos.length === 0) {
+      if (!images || images.length === 0) {
         return await sock.sendMessage(
           jid,
           { text: `❌ *No images found for "${query}".*` },
@@ -42,28 +43,48 @@ module.exports = {
         );
       }
 
-      // Send the top photo as an image with details as caption
-      const topPhoto = photos[0];
-      const caption = `🖼️ *PEXELS SEARCH:* ${query.toUpperCase()}\n\n` +
-                      `📸 *Photographer:* ${topPhoto.photographer}\n` +
-                      `🔗 *Original:* ${topPhoto.url}`;
+      // Limit results to 10 images maximum
+      const limitList = images.slice(0, 10);
 
-      await sock.sendMessage(
-        jid,
-        {
-          image: { url: topPhoto.src.large },
-          caption: caption
-        },
-        { quoted: msg }
-      );
+      // Send each image directly to chat
+      for (let i = 0; i < limitList.length; i++) {
+        const imgUrl = typeof limitList[i] === 'string' ? limitList[i] : limitList[i].url || limitList[i].link;
+
+        if (imgUrl) {
+          await sock.sendMessage(
+            jid,
+            {
+              image: { url: imgUrl },
+              caption: `🖼️ *Result ${i + 1}/${limitList.length} for:* ${query.toUpperCase()}`
+            }
+          );
+        }
+      }
 
     } catch (e) {
       console.error('[IMAGESEARCH ERROR]', e);
-      await sock.sendMessage(
-        jid,
-        { text: `❌ *Error searching Pexels:* ${e.message}` },
-        { quoted: msg }
-      );
+
+      // Fallback API if the primary endpoint fails
+      try {
+        const fallbackRes = await axios.get(
+          `https://api.lolhuman.xyz/api/gimage?apikey=apiKey&query=${encodeURIComponent(query)}`
+        );
+        const fallbackImages = fallbackRes.data?.result?.slice(0, 10) || [];
+
+        for (let i = 0; i < fallbackImages.length; i++) {
+          await sock.sendMessage(jid, {
+            image: { url: fallbackImages[i] },
+            caption: `🖼️ *Result ${i + 1}/${fallbackImages.length} for:* ${query.toUpperCase()}`
+          });
+        }
+      } catch (err) {
+        await sock.sendMessage(
+          jid,
+          { text: `❌ *Error fetching images:* ${e.message}` },
+          { quoted: msg }
+        );
+      }
     }
   }
 };
+
