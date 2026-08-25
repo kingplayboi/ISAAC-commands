@@ -1,10 +1,13 @@
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
   name: 'botpp',
-  aliases: ['setbotpp', 'setpp'],
-  description: "Update the bot's profile picture (owner only). Usage: reply to an image with .botpp",
+  aliases: ['setmenu', 'setmenupp'],
+  description: "Update the menu banner image by replying to an image or a user's message (owner only).",
 
   async execute(sock, msg) {
     const rawJid = msg.key.remoteJid;
@@ -15,7 +18,7 @@ module.exports = {
     if (!isOwner(msg)) {
       return await sock.sendMessage(
         jid,
-        { text: '❌ *Only the bot owner can change the profile picture.*' },
+        { text: '❌ *Only the bot owner can change the menu picture.*' },
         { quoted: msg }
       );
     }
@@ -23,41 +26,72 @@ module.exports = {
     const ctx = msg.message?.extendedTextMessage?.contextInfo;
     const quoted = ctx?.quotedMessage;
 
-    if (!quoted?.imageMessage) {
+    if (!quoted && !ctx?.participant) {
       return await sock.sendMessage(
         jid,
-        { text: '❌ *Reply to an image with .botpp*' },
+        { text: '❌ *Please reply to an image OR reply to a user\'s message with .botpp*' },
         { quoted: msg }
       );
     }
 
+    let imageBuffer = null;
+
     try {
-      // Download media buffer cleanly using Baileys options
-      const media = await downloadMediaMessage(
-        { message: quoted },
-        'buffer',
-        {}
-      );
+      // Option A: Replied directly to an image
+      if (quoted?.imageMessage) {
+        imageBuffer = await downloadMediaMessage(
+          { message: quoted },
+          'buffer',
+          {}
+        );
+      } 
+      // Option B: Replied to a user's message (text/audio/etc) -> Fetch their profile picture
+      else if (ctx?.participant) {
+        const targetJid = ctx.participant;
+        
+        let profilePicUrl;
+        try {
+          profilePicUrl = await sock.profilePictureUrl(targetJid, 'image');
+        } catch {
+          return await sock.sendMessage(
+            jid,
+            { text: '❌ *Could not fetch profile picture. The user might have hidden it.*' },
+            { quoted: msg }
+          );
+        }
 
-      // Extract and sanitize raw bot user JID (strip session device suffixes)
-      const rawUserJid = sock.user?.id || sock.user?.jid;
-      const botJid = rawUserJid ? rawUserJid.split(':')[0] + '@s.whatsapp.net' : null;
-
-      if (!botJid) {
-        throw new Error('Could not resolve bot user JID from session.');
+        const res = await axios.get(profilePicUrl, { responseType: 'arraybuffer' });
+        imageBuffer = Buffer.from(res.data);
       }
 
-      await sock.updateProfilePicture(botJid, media);
+      if (!imageBuffer) {
+        return await sock.sendMessage(
+          jid,
+          { text: '❌ *Could not process image.*' },
+          { quoted: msg }
+        );
+      }
+
+      // Save to assets/menu.jpg
+      const assetsDir = path.join(__dirname, '../assets');
+      if (!fs.existsSync(assetsDir)) {
+        fs.mkdirSync(assetsDir, { recursive: true });
+      }
+
+      const menuPath = path.join(assetsDir, 'menu.jpg');
+      fs.writeFileSync(menuPath, imageBuffer);
+
       await sock.sendMessage(
         jid,
-        { text: '✅ *Bot profile picture updated successfully.*' },
+        { text: '✅ *Menu image updated successfully! Type .menu to verify.*' },
         { quoted: msg }
       );
+
     } catch (e) {
       console.error('[BOTPP ERROR]', e);
       await sock.sendMessage(
         jid,
-        { text: `❌ *Could not update profile picture:* ${e.message}` },
+        { text: `❌ *Failed to update menu image:* ${e.message}` },
         { quoted: msg }
       );
     }
