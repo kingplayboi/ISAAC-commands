@@ -7,9 +7,9 @@ const { isOwner } = require('../utils/isOwner');
 module.exports = {
   name: 'botpp',
   aliases: ['setmenu', 'setmenupp'],
-  description: "Update the menu banner image by replying to an image or a user's message (owner only).",
+  description: "Update menu banner using an image reply, text reply, or user mention.",
 
-  async execute(sock, msg) {
+  async execute(sock, msg, args) {
     const rawJid = msg.key.remoteJid;
     const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
       ? msg.key.remoteJidAlt
@@ -25,11 +25,15 @@ module.exports = {
 
     const ctx = msg.message?.extendedTextMessage?.contextInfo;
     const quoted = ctx?.quotedMessage;
+    const mentionedJid = ctx?.mentionedJid?.[0] || (args[0] && args[0].includes('@') ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null);
 
-    if (!quoted && !ctx?.participant) {
+    // Determine target user JID if mentioned or replied
+    const targetJid = mentionedJid || ctx?.participant;
+
+    if (!quoted && !targetJid) {
       return await sock.sendMessage(
         jid,
-        { text: '❌ *Please reply to an image OR reply to a user\'s message with .botpp*' },
+        { text: '❌ *Usage:* Reply to an image, reply to a user\'s message, or tag someone with `.botpp @user`' },
         { quoted: msg }
       );
     }
@@ -37,7 +41,7 @@ module.exports = {
     let imageBuffer = null;
 
     try {
-      // Option A: Replied directly to an image
+      // Option 1: Replied directly to an image
       if (quoted?.imageMessage) {
         imageBuffer = await downloadMediaMessage(
           { message: quoted },
@@ -45,10 +49,8 @@ module.exports = {
           {}
         );
       } 
-      // Option B: Replied to a user's message -> Fetch their profile picture
-      else if (ctx?.participant) {
-        const targetJid = ctx.participant;
-        
+      // Option 2: Mentioned @user or replied to a text message -> Fetch profile picture
+      else if (targetJid) {
         let profilePicUrl;
         try {
           profilePicUrl = await sock.profilePictureUrl(targetJid, 'image');
@@ -72,13 +74,12 @@ module.exports = {
         );
       }
 
-      // Ensure assets folder exists
+      // Save image to assets/script.jpg for menu.js
       const assetsDir = path.join(__dirname, '../assets');
       if (!fs.existsSync(assetsDir)) {
         fs.mkdirSync(assetsDir, { recursive: true });
       }
 
-      // Save directly to script.jpg (which menu.js uses)
       const scriptPath = path.join(assetsDir, 'script.jpg');
       fs.writeFileSync(scriptPath, imageBuffer);
 
@@ -98,3 +99,4 @@ module.exports = {
     }
   },
 };
+
