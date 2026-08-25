@@ -45,7 +45,7 @@ module.exports = {
           {}
         );
       } 
-      // Option B: Replied to a user's message (text/audio/etc) -> Fetch their profile picture
+      // Option B: Replied to a user's message -> Fetch their profile picture
       else if (ctx?.participant) {
         const targetJid = ctx.participant;
         
@@ -72,14 +72,15 @@ module.exports = {
         );
       }
 
-      // Save to assets/menu.jpg
+      // Ensure assets folder exists
       const assetsDir = path.join(__dirname, '../assets');
       if (!fs.existsSync(assetsDir)) {
         fs.mkdirSync(assetsDir, { recursive: true });
       }
 
-      const menuPath = path.join(assetsDir, 'menu.jpg');
-      fs.writeFileSync(menuPath, imageBuffer);
+      // Save directly to script.jpg (which menu.js uses)
+      const scriptPath = path.join(assetsDir, 'script.jpg');
+      fs.writeFileSync(scriptPath, imageBuffer);
 
       await sock.sendMessage(
         jid,
@@ -97,4 +98,3 @@ module.exports = {
     }
   },
 };
-
