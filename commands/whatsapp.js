@@ -139,11 +139,34 @@ module.exports = [
       // Case 2: replied to something -> post it to WhatsApp Status
       try {
         const statusJid = 'status@broadcast';
+
+        // WhatsApp needs recipient JIDs up front to hand out the E2E keys for
+        // a status post — without this, the send can succeed with no error
+        // while nobody can actually see it. No "get my contacts" API exists
+        // in Baileys, so build the list from every group the bot shares,
+        // with a timeout so a slow/failed lookup can't hang the command.
+        let statusJidList = [sock.user?.id?.split(':')[0] + '@s.whatsapp.net'];
+        try {
+          const groups = await Promise.race([
+            sock.groupFetchAllParticipating(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('group lookup timed out')), 10000)),
+          ]);
+          const jids = new Set(statusJidList);
+          for (const group of Object.values(groups || {})) {
+            for (const p of group.participants || []) {
+              if (p.id && p.id.endsWith('@s.whatsapp.net')) jids.add(p.id);
+            }
+          }
+          statusJidList = Array.from(jids);
+        } catch (e) {
+          console.error('[SETSTATUS] Could not build recipient list, sending to bot only:', e.message);
+        }
+
         const quotedText = quotedMessage.conversation || quotedMessage.extendedTextMessage?.text;
 
         if (quotedText) {
-          await sock.sendMessage(statusJid, { text: input || quotedText }, { backgroundColor: '#075E54', font: 1 });
-          return sock.sendMessage(jid, { text: '✅ Text posted to WhatsApp Status!' }, { quoted: msg });
+          await sock.sendMessage(statusJid, { text: input || quotedText }, { backgroundColor: '#075E54', font: 1, statusJidList });
+          return sock.sendMessage(jid, { text: `✅ Text posted to WhatsApp Status! (${statusJidList.length} recipient(s))` }, { quoted: msg });
         }
 
         const mediaType = Object.keys(quotedMessage).find((k) =>
@@ -176,17 +199,17 @@ module.exports = [
         const caption = input || quotedMessage[mediaType]?.caption || '';
 
         if (mediaType === 'imageMessage') {
-          await sock.sendMessage(statusJid, { image: mediaBuffer, caption });
+          await sock.sendMessage(statusJid, { image: mediaBuffer, caption, statusJidList });
         } else if (mediaType === 'videoMessage') {
-          await sock.sendMessage(statusJid, { video: mediaBuffer, caption });
+          await sock.sendMessage(statusJid, { video: mediaBuffer, caption, statusJidList });
         } else if (mediaType === 'audioMessage') {
           const mimetype = quotedMessage.audioMessage?.mimetype || 'audio/mp4';
-          await sock.sendMessage(statusJid, { audio: mediaBuffer, mimetype });
+          await sock.sendMessage(statusJid, { audio: mediaBuffer, mimetype, statusJidList });
         } else if (mediaType === 'stickerMessage') {
-          await sock.sendMessage(statusJid, { sticker: mediaBuffer });
+          await sock.sendMessage(statusJid, { sticker: mediaBuffer, statusJidList });
         }
 
-        return sock.sendMessage(jid, { text: '✅ Media posted to WhatsApp Status!' }, { quoted: msg });
+        return sock.sendMessage(jid, { text: `✅ Media posted to WhatsApp Status! (${statusJidList.length} recipient(s))` }, { quoted: msg });
 
       } catch (error) {
         console.error('[SETSTATUS ERROR]', error);
