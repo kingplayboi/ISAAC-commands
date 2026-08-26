@@ -96,12 +96,22 @@ const categories = {
             menuMessage += ` ╰─────────────────\n`;
         }
 
-        const imagePath = path.join(__dirname, '../assets/script.jpg');
+            const savedBanner = settingsStore.get('menu_banner', null);
+    const localImagePath = path.join(__dirname, '../assets/script.jpg');
 
-        if (fs.existsSync(imagePath)) {
-            await sock.sendMessage(jid, { image: fs.readFileSync(imagePath), caption: menuMessage });
-        } else {
-            await sock.sendMessage(jid, { text: menuMessage });
-        }
+    let menuBanner = null;
+
+    if (savedBanner) {
+      menuBanner = Buffer.from(savedBanner, 'base64');
+    } else if (fs.existsSync(localImagePath)) {
+      menuBanner = fs.readFileSync(localImagePath);
+    }
+
+    if (menuBanner) {
+      await sock.sendMessage(jid, { image: menuBanner, caption: menuMessage }, { quoted: msg });
+    } else {
+      await sock.sendMessage(jid, { text: menuMessage }, { quoted: msg });
+    }
+
     },
 };
