@@ -12,6 +12,7 @@ const groqSessions = new Map();
 const gptSessions = new Map();
 const mistralSessions = new Map();
 const wormgptSessions = new Map();
+const bingSessions = new Map();
 
 function getHistory(store, id) {
   return store.get(id) || [];
@@ -181,6 +182,16 @@ module.exports = [
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
 
+   makeChatCommand({
+    name: 'bing',
+    aliases: ['bingai', 'msbing'],
+    label: 'Bing AI',
+    emoji: '🔍',
+    sessions: bingSessions,
+    endpointPath: '/ai/gpt4',
+    brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
+  }),
+
   makeChatCommand({
     name: 'mistral',
     aliases: ['mi'],
@@ -272,34 +283,6 @@ Created by Isaac and Muarabu.
     },
   },
 
-  // ── BING (via Gemini 2.5 Flash) ─────────────────────────────────────────
-  {
-    name: 'bing',
-    description: 'Ask Bing-style AI. Usage: .bing your question',
-    async execute(sock, msg, args) {
-      const jid = msg.key.remoteJid;
-      const prompt = args.join(' ');
-      if (!prompt) return sock.sendMessage(jid, { text: '❌ Usage: .bing your question' }, { quoted: msg });
-
-      const thinkingMsg = await sock.sendMessage(jid, { text: '🔍 Searching...' }, { quoted: msg });
-
-      try {
-        const res = await httpsPost(
-          'generativelanguage.googleapis.com',
-          `/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
-          { 'Content-Type': 'application/json' },
-          { contents: [{ parts: [{ text: `Search and answer this question accurately: ${prompt}` }] }] }
-        );
-
-        const reply = res?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!reply) throw new Error('No response from Gemini API');
-
-        await sock.sendMessage(jid, { text: `🔍 *Bing AI*\n\n${reply}`, edit: thinkingMsg.key });
-      } catch (e) {
-        await sock.sendMessage(jid, { text: '❌ Bing error: ' + e.message, edit: thinkingMsg.key });
-      }
-    },
-  },
 
   // ── UPSCALE (via Pollinations) ──────────────────────────────────────────
   {
