@@ -3,23 +3,26 @@ const settingsStore = require('../utils/settingsStore');
 const groupSettingsStore = require('../utils/groupSettingsStore');
 
 function onOff(value) {
-    return value ? '✅ ON' : '❌ OFF';
+  return value ? '✅ ON' : '❌ OFF';
 }
 
 module.exports = {
-    name: 'settings',
-    description: "Shows the bot's current settings.",
-    async execute(sock, msg) {
-        const jid = msg.key.remoteJid;
+  name: 'settings',
+  description: "Shows the bot's current settings.",
+  async execute(sock, msg) {
+    const jid = msg.key.remoteJid;
 
-        let antilinkOn = false;
+    let antilinkOn = false;
+    let pdmOn = false;
     let antigmMode = 'N/A';
+
     if (jid.endsWith('@g.us')) {
-        antilinkOn = groupSettingsStore.get(jid, 'antilink', false);
-        antigmMode = groupSettingsStore.get(jid, 'antigm', 'off').toUpperCase();
+      antilinkOn = groupSettingsStore.get(jid, 'antilink', false);
+      pdmOn = groupSettingsStore.get(jid, 'pdm', false);
+      antigmMode = groupSettingsStore.get(jid, 'antigm', 'off').toUpperCase();
     }
 
-        const text = `╔══════════════════════╗
+    const text = `╔══════════════════════╗
 ║     ⚙️  BOT SETTINGS
 ╚══════════════════════╝
 
@@ -41,6 +44,7 @@ module.exports = {
 ┣ AutoBio: ${onOff(settingsStore.get('autobio', false))}
 ┣ AutoRecording: ${onOff(settingsStore.get('autorecording', false))}
 ┣ AutoTyping: ${onOff(settingsStore.get('autotyping', false))}
+┣ PDM: ${onOff(pdmOn)}
 ┗ WelcomeGoodbye: ${onOff(settingsStore.get('welcomegoodbye', false))}
 
 *💬 Bot Behaviour*
@@ -49,6 +53,7 @@ module.exports = {
 ┣ MenuType: 📋 ${settingsStore.get('menutype', 'list').toUpperCase()}
 ┗ WAPresence: ${settingsStore.get('wapresence', false) ? '🟢 ONLINE' : '🔴 OFFLINE'}`;
 
-        await sock.sendMessage(jid, { text }, { quoted: msg });
-    },
+    await sock.sendMessage(jid, { text }, { quoted: msg });
+  },
 };
+
