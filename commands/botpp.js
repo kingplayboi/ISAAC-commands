@@ -1,8 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { isOwner } = require('../utils/isOwner');
+const settingsStore = require('../utils/settingsStore');
 
 module.exports = {
   name: 'botpp',
@@ -27,7 +26,6 @@ module.exports = {
     const quoted = ctx?.quotedMessage;
     const mentionedJid = ctx?.mentionedJid?.[0] || (args[0] && args[0].includes('@') ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null);
 
-    // Determine target user JID if mentioned or replied
     const targetJid = mentionedJid || ctx?.participant;
 
     if (!quoted && !targetJid) {
@@ -41,16 +39,13 @@ module.exports = {
     let imageBuffer = null;
 
     try {
-      // Option 1: Replied directly to an image
       if (quoted?.imageMessage) {
         imageBuffer = await downloadMediaMessage(
           { message: quoted },
           'buffer',
           {}
         );
-      } 
-      // Option 2: Mentioned @user or replied to a text message -> Fetch profile picture
-      else if (targetJid) {
+      } else if (targetJid) {
         let profilePicUrl;
         try {
           profilePicUrl = await sock.profilePictureUrl(targetJid, 'image');
@@ -74,18 +69,13 @@ module.exports = {
         );
       }
 
-      // Save image to assets/script.jpg for menu.js
-      const assetsDir = path.join(__dirname, '../assets');
-      if (!fs.existsSync(assetsDir)) {
-        fs.mkdirSync(assetsDir, { recursive: true });
-      }
-
-      const scriptPath = path.join(assetsDir, 'script.jpg');
-      fs.writeFileSync(scriptPath, imageBuffer);
+      // Convert buffer to base64 and persist in settings store
+      const base64Image = imageBuffer.toString('base64');
+      settingsStore.set('menu_banner', base64Image);
 
       await sock.sendMessage(
         jid,
-        { text: '✅ *Menu image updated successfully! Type .menu to verify.*' },
+        { text: '✅ *Menu image updated successfully! Type menu to verify.*' },
         { quoted: msg }
       );
 

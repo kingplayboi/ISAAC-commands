@@ -91,53 +91,144 @@ module.exports = [
     }
   },
 
-  // ── SETSTATUS ─────────────────────────────────────────────────────────────
+    // ── SETSTATUS ─────────────────────────────────────────────────────────────
   {
     name: 'setstatus',
-    description: 'Set the bot WhatsApp status/bio. Usage: .setstatus <text>',
+    description: 'Update bot profile status or post replied text/media to WhatsApp Status.',
     async execute(sock, msg, args) {
       const jid = msg.key.remoteJid;
-      const text = args.join(' ');
+      const input = args.join(' ');
+      const ctx = msg.message?.extendedTextMessage?.contextInfo;
+      const quoted = ctx?.quotedMessage;
 
-      if (!text) {
-        return sock.sendMessage(jid, {
-          text: '❌ Usage: .setstatus <your status text>'
-        }, { quoted: msg });
+      // Case 1: Plain text without reply -> Update Profile Bio
+      if (!quoted && input) {
+        try {
+          await sock.updateProfileStatus(input);
+          return await sock.sendMessage(jid, { text: `✅ Profile status (bio) updated to:\n*${input}*` }, { quoted: msg });
+        } catch (e) {
+          return await sock.sendMessage(jid, { text: `❌ Failed to update bio: ${e.message}` }, { quoted: msg });
+        }
       }
 
-      await sock.updateProfileStatus(text);
-      await sock.sendMessage(jid, { text: `✅ Status updated to:\n${text}` }, { quoted: msg });
-    }
+      // Case 2: Replied to a message -> Post to WhatsApp Status (Story)
+      if (quoted) {
+        try {
+          const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+          const statusJid = 'status@broadcast';
+
+          // 2a. Replied to Text Message
+          if (quoted.conversation || quoted.extendedTextMessage?.text) {
+            const statusText = input || quoted.conversation || quoted.extendedTextMessage?.text;
+            await sock.sendMessage(statusJid, { text: statusText });
+            return await sock.sendMessage(jid, { text: '✅ Text posted to WhatsApp Status!' }, { quoted: msg });
+          }
+
+          // 2b. Replied to Media (Image, Video, Audio)
+          const mediaType = Object.keys(quoted).find((k) =>
+            ['imageMessage', 'videoMessage', 'audioMessage'].includes(k)
+          );
+
+          if (!mediaType) {
+            return await sock.sendMessage(jid, { text: '❌ Unsupported media type for status.' }, { quoted: msg });
+          }
+
+          const mediaBuffer = await downloadMediaMessage(
+            {
+              message: quoted,
+              key: {
+                remoteJid: jid,
+                id: ctx.stanzaId,
+                participant: ctx.participant || msg.key.participant,
+              },
+            },
+            'buffer',
+            {}
+          );
+
+          if (!mediaBuffer) {
+            return await sock.sendMessage(jid, { text: '❌ Failed to download media.' }, { quoted: msg });
+          }
+
+          const caption = input || quoted[mediaType]?.caption || '';
+
+          if (mediaType === 'imageMessage') {
+            await sock.sendMessage(statusJid, { image: mediaBuffer, caption });
+          } else if (mediaType === 'videoMessage') {
+            await sock.sendMessage(statusJid, { video: mediaBuffer, caption });
+          } else if (mediaType === 'audioMessage') {
+            const mimetype = quoted.audioMessage?.mimetype || 'audio/mp4';
+            await sock.sendMessage(statusJid, { audio: mediaBuffer, mimetype, ptt: true });
+          }
+
+          return await sock.sendMessage(jid, { text: '✅ Media successfully posted to WhatsApp Status!' }, { quoted: msg });
+
+        } catch (error) {
+          return await sock.sendMessage(jid, { text: `❌ Failed to post status: ${error.message}` }, { quoted: msg });
+        }
+      }
+
+      // Usage instructions if no input and no reply
+      return await sock.sendMessage(
+        jid,
+        { text: '❌ *Usage:*\n• Reply to an image/video/text with `.setstatus [optional caption]` to post to Story.\n• Use `.setstatus <text>` to update profile bio.' },
+        { quoted: msg }
+      );
+    },
   },
 
-  // ── STATUS ────────────────────────────────────────────────────────────────
+
+    // ── STATUS ────────────────────────────────────────────────────────────────
   {
     name: 'status',
-    description: 'Get the current bot WhatsApp status/bio.',
-    async execute(sock, msg) {
+    description: "Get the profile status/bio of the bot, a tagged user, or a replied user.",
+    async execute(sock, msg, args) {
       const jid = msg.key.remoteJid;
+      const ctx = msg.message?.extendedTextMessage?.contextInfo;
+      const quoted = ctx?.quotedMessage;
+
+      // Determine target JID: tagged user -> replied user -> bot's own JID
+      let targetJid = ctx?.mentionedJid?.[0] 
+        || (args[0] && args[0].includes('@') ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null)
+        || ctx?.participant;
+
+      if (!targetJid) {
+        // Fallback to bot's own JID (clean decoded JID)
+        const botId = sock.user?.id || sock.user?.jid || '';
+        targetJid = botId.split(':')[0] + '@s.whatsapp.net';
+      }
+
+      const cleanNum = targetJid.split('@')[0];
+      const isSelf = targetJid.includes(cleanNum) && sock.user?.id?.includes(cleanNum);
 
       try {
-        const status = await sock.fetchStatus(sock.user.id);
-        await sock.sendMessage(jid, {
-          text: `📝 *Bot Status:*\n${status?.status || 'No status set.'}`
+        const statusObj = await sock.fetchStatus(targetJid);
+        const statusText = statusObj?.status || 'No status set.';
+        const setAt = statusObj?.setAt ? new Date(statusObj.setAt).toLocaleDateString() : '';
+
+        const header = isSelf 
+          ? `📝 *Bot Status:*` 
+          : `📝 *Status for @${cleanNum}:*`;
+
+        const message = setAt 
+          ? `${header}\n${statusText}\n\n_Set on: ${setAt}_` 
+          : `${header}\n${statusText}`;
+
+        await sock.sendMessage(jid, { 
+          text: message, 
+          mentions: [targetJid] 
         }, { quoted: msg });
-      } catch {
-        await sock.sendMessage(jid, { text: '❌ Could not fetch status.' }, { quoted: msg });
+
+      } catch (error) {
+        await sock.sendMessage(jid, { 
+          text: `❌ Could not fetch status for @${cleanNum}. (Privacy settings may hide it).`, 
+          mentions: [targetJid] 
+        }, { quoted: msg });
       }
     }
   },
 
-  // ── ONLINE ────────────────────────────────────────────────────────────────
-  {
-    name: 'online',
-    description: 'Set bot presence to online/available.',
-    async execute(sock, msg) {
-      const jid = msg.key.remoteJid;
-      await sock.sendPresenceUpdate('available', jid);
-      await sock.sendMessage(jid, { text: '✅ Bot presence set to online.' }, { quoted: msg });
-    }
-  },
+
 
   // ── CAPTION ───────────────────────────────────────────────────────────────
   {
@@ -177,7 +268,7 @@ module.exports = [
     }
   },
 
-  // ── DOC ───────────────────────────────────────────────────────────────────
+    // ── DOC ───────────────────────────────────────────────────────────────────
   {
     name: 'doc',
     description: 'Send a media file as a document. Reply to media with .doc',
@@ -187,28 +278,74 @@ module.exports = [
       const quoted = ctx?.quotedMessage;
 
       if (!quoted) {
-        return sock.sendMessage(jid, {
-          text: '❌ Reply to a media message with .doc'
-        }, { quoted: msg });
+        return sock.sendMessage(
+          jid,
+          { text: '❌ Reply to a media message (image, video, audio, or document) with *.doc*' },
+          { quoted: msg }
+        );
       }
 
-      const type = Object.keys(quoted)[0];
-      const media = await downloadMediaMessage(
-        { message: quoted, key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant } },
-        'buffer',
-        {}
+      // Find the media object inside quoted message (imageMessage, videoMessage, etc.)
+      const mediaType = Object.keys(quoted).find((k) =>
+        ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'].includes(k)
       );
 
-      const mimetype = quoted[type]?.mimetype || 'application/octet-stream';
-      const fileName = quoted[type]?.fileName || `file.${mimetype.split('/')[1] || 'bin'}`;
+      if (!mediaType) {
+        return sock.sendMessage(
+          jid,
+          { text: '❌ The replied message is not a media file (image, video, audio, or document).' },
+          { quoted: msg }
+        );
+      }
 
-      await sock.sendMessage(jid, {
-        document: media,
-        mimetype,
-        fileName
-      }, { quoted: msg });
-    }
+      try {
+        const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
+        const media = await downloadMediaMessage(
+          {
+            message: quoted,
+            key: {
+              remoteJid: jid,
+              id: ctx.stanzaId,
+              participant: ctx.participant || msg.key.participant,
+            },
+          },
+          'buffer',
+          {}
+        );
+
+        if (!media) {
+          return sock.sendMessage(
+            jid,
+            { text: '❌ Failed to download media file.' },
+            { quoted: msg }
+          );
+        }
+
+        const mediaObj = quoted[mediaType];
+        const mimetype = mediaObj?.mimetype || 'application/octet-stream';
+        const defaultExt = mimetype.split('/')[1]?.split(';')[0] || 'bin';
+        const fileName = mediaObj?.fileName || `file_${Date.now()}.${defaultExt}`;
+
+        await sock.sendMessage(
+          jid,
+          {
+            document: media,
+            mimetype,
+            fileName,
+          },
+          { quoted: msg }
+        );
+      } catch (error) {
+        await sock.sendMessage(
+          jid,
+          { text: `❌ Failed to convert media to document: ${error.message}` },
+          { quoted: msg }
+        );
+      }
+    },
   },
+
 
   // ── CINFO ─────────────────────────────────────────────────────────────────
   {
