@@ -91,7 +91,7 @@ module.exports = [
     }
   },
 
-    // ── SETSTATUS ─────────────────────────────────────────────────────────────
+      // ── SETSTATUS ─────────────────────────────────────────────────────────────
   {
     name: 'setstatus',
     description: 'Update bot profile status or post replied text/media to WhatsApp Status.',
@@ -117,10 +117,25 @@ module.exports = [
           const { downloadMediaMessage } = require('@whiskeysockets/baileys');
           const statusJid = 'status@broadcast';
 
+          // Fetch contacts/participating JIDs to ensure delivery broadcast
+          const botJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
+          const broadcastOpts = {
+            statusJidList: [botJid],
+          };
+
           // 2a. Replied to Text Message
           if (quoted.conversation || quoted.extendedTextMessage?.text) {
             const statusText = input || quoted.conversation || quoted.extendedTextMessage?.text;
-            await sock.sendMessage(statusJid, { text: statusText });
+            
+            await sock.sendMessage(
+              statusJid,
+              { 
+                text: statusText,
+                backgroundColor: '#075E54',
+                font: 1
+              },
+              broadcastOpts
+            );
             return await sock.sendMessage(jid, { text: '✅ Text posted to WhatsApp Status!' }, { quoted: msg });
           }
 
@@ -153,12 +168,12 @@ module.exports = [
           const caption = input || quoted[mediaType]?.caption || '';
 
           if (mediaType === 'imageMessage') {
-            await sock.sendMessage(statusJid, { image: mediaBuffer, caption });
+            await sock.sendMessage(statusJid, { image: mediaBuffer, caption }, broadcastOpts);
           } else if (mediaType === 'videoMessage') {
-            await sock.sendMessage(statusJid, { video: mediaBuffer, caption });
+            await sock.sendMessage(statusJid, { video: mediaBuffer, caption }, broadcastOpts);
           } else if (mediaType === 'audioMessage') {
             const mimetype = quoted.audioMessage?.mimetype || 'audio/mp4';
-            await sock.sendMessage(statusJid, { audio: mediaBuffer, mimetype, ptt: true });
+            await sock.sendMessage(statusJid, { audio: mediaBuffer, mimetype, ptt: true }, broadcastOpts);
           }
 
           return await sock.sendMessage(jid, { text: '✅ Media successfully posted to WhatsApp Status!' }, { quoted: msg });
