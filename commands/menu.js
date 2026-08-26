@@ -21,7 +21,7 @@ function downloadBuffer(url) {
 }
 
 function formatCommand(text) {
-    return `\`\`\`${text.toUpperCase()}\`\`\``;
+    return `> ${text.toUpperCase()}`;
 }
 
 function formatUptime(seconds) {
@@ -60,17 +60,17 @@ const currentTime = new Intl.DateTimeFormat('en-US', {
         const prefix = settingsStore.get('prefix', config.prefix);
         const workType = settingsStore.get('mode', config.WORK_TYPE);
 
-        let menuMessage = `┌──────────────────────────────┐\n`;
-        menuMessage += `  🤖 *_ISAAC BOT_*\n`;
-        menuMessage += `  ━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        menuMessage += `  ⚡ Prefix : [ ${prefix || '.'} ]\n`;
-        menuMessage += `  🔒 Mode   : ${(workType || 'public').toUpperCase()}\n`;
-        menuMessage += `  🕒 Time   : ${currentTime}\n`;
-        menuMessage += `  🗓️ Date   : ${currentDate}\n`;
-        menuMessage += `  💾 Ram    : ${usedRamGb} GB / ${totalRamGb} GB\n`;
-        menuMessage += `  ⏱️ Uptime : ${formatUptime(uptimeSeconds)}\n`;
-menuMessage += `  🔌 Plugins : ${new Set(commands.values()).size} commands\n`;
-menuMessage += `└──────────────────────────────┘\n`;
+        let menuMessage = `> ┌──────────────────────────────┐\n`;
+        menuMessage += `>  🤖 *_ISAAC BOT_*\n`;
+        menuMessage += `>  ━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        menuMessage += `>  ⚡ Prefix : [ ${prefix || '.'} ]\n`;
+        menuMessage += `>  🔒 Mode   : ${(workType || 'public').toUpperCase()}\n`;
+        menuMessage += `>  🕒 Time   : ${currentTime}\n`;
+        menuMessage += `>  🗓️ Date   : ${currentDate}\n`;
+        menuMessage += `>  💾 Ram    : ${usedRamGb} GB / ${totalRamGb} GB\n`;
+        menuMessage += `>  ⏱️ Uptime : ${formatUptime(uptimeSeconds)}\n`;
+menuMessage += `>  🔌 Plugins : ${new Set(commands.values()).size} commands\n`;
+menuMessage += `>└──────────────────────────────┘\n`;
 
 const categories = {
     'OWNER': ['self', 'public', 'settings', 'pair', 'kill', 'kill2', 'backup', 'reminder', 'task', 'update', 'updatenow', 'eval', 'gauth', 'antilinkall', 'antidelete', 'autolike', 'autobio', 'menutype', 'wapresence', 'badword', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos', 'mygroups'],
@@ -89,11 +89,11 @@ const categories = {
     'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
     'MISC': ['isaac', 'trt', 'runtime', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
 };        for (const [categoryName, commandList] of Object.entries(categories)) {
-            menuMessage += ` ╭─❏ *${categoryName}* ❏\n`;
+            menuMessage += `> ╭─❏ *${categoryName}* ❏\n`;
             commandList.forEach(cmd => {
                 menuMessage += ` │ ${formatCommand(cmd)}\n`;
             });
-            menuMessage += ` ╰─────────────────\n`;
+            menuMessage += `> ╰─────────────────\n`;
         }
 
                  const savedBanner = settingsStore.get('menu_banner', null);
