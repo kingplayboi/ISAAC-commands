@@ -80,7 +80,7 @@ const categories = {
     'AI': ['gemini', 'upload', 'imagine', 'vision2', 'groq', 'mi', 'worm', 'gpt', 'dall', 'bing', 'upscale', 'vision', 'void', 'claude', 'wormgpt', 'tts', 'vocalremover', 'transcribe', 'muslimai', 'bibleai', 'speechwriter'],
     'USER': ['block', 'unblock', 'pp', 'fullpp', 'jid', 'gjid', 'left', 'ison'],
     'TOOLS': ['fancy', 'webscan', 'zip', 'screenshot', 'gitclone', 'apk', 'clearcache', 'qr', 'zodiac', 'url', 'imagesearch', 'define'],
-    'SECURITY': ['antifake', 'antigm', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
+    'SECURITY': ['antigm', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
     'FOOTBALL': ['livescore', 'standings', 'bundesliga', 'epl', 'laliga', 'ligue1', 'seriea', 'ucl', 'news', 'playersearch', 'teamsearch', 'fifa', 'fifaplayoffs', 'euro', 'eplscorers', 'laligascorers', 'bundesligascorers', 'serieascorers', 'ligue1scorers', 'uclscorers'],
     'CODING': ['enc', 'gpass', 'compile-py', 'compile-js', 'compile-c', 'compile-c++', 'base', 'unbase'],
     'MEDIA': ['s', 'take', 'photo', 'mix', 'smeme', 'vv', 'vv2', 'botpp', 'getpfp', 'removebg', 'similarimage', 'remini', 'remini2', 'save'],

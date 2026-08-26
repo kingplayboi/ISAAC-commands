@@ -24,7 +24,6 @@ function makeToggleCommand(name, settingKey, label, emoji) {
 
 module.exports = [
 
-  makeToggleCommand('antifake', 'antifake', 'Anti-fake number protection', '🛡️'),
 
   {
     name: 'antigm',
@@ -85,7 +84,6 @@ module.exports = [
 🔗 Antilink: ${settings.antilink ? String(settings.antilink).toUpperCase() : '❌ OFF'}
 🚫 Antispam: ${flag(settings.antispam)}
 🤬 Antiword: ${flag(settings.antiword)}
-🛡️ Antifake: ${flag(settings.antifake)}
 🛡️ Antigm: ${settings.antigm ? String(settings.antigm).toUpperCase() : '❌ OFF'}
 🛡️ Antigstatus: ${flag(settings.antigstatus)}
 👋 Welcome: ${flag(settings.welcome)}
