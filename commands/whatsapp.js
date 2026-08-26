@@ -35,29 +35,12 @@ function getQuoted(sock, msg) {
   return { jid, ctx, quotedMessage, quotedKey };
 }
 
-// status@broadcast needs recipient JIDs up front so WhatsApp can hand out the
-// encryption keys for the post — without this, only the bot itself can ever
-// decrypt/see what it just posted, even though the send call succeeds.
-// There's no single API for "my contacts", so this collects everyone the bot
-// shares a group with, which covers the common case for a bot account.
-async function buildStatusJidList(sock) {
-  const jids = new Set();
-  const botJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
-  jids.add(botJid);
-
-  try {
-    const groups = await sock.groupFetchAllParticipating();
-    for (const group of Object.values(groups)) {
-      for (const p of group.participants || []) {
-        if (p.id && p.id.endsWith('@s.whatsapp.net')) jids.add(p.id);
-      }
-    }
-  } catch (e) {
-    console.error('[STATUS JID LIST] Could not pull group participants:', e.message);
-  }
-
-  return Array.from(jids);
-}
+// WhatsApp doesn't let an account query its own "about" text back over the
+// usync path that fetchStatus() uses — sock.fetchStatus(sock.user.id) reliably
+// comes back empty even when a bio is set. So the bot remembers whatever it
+// last set via .setstatus and serves that back for the "self" case instead of
+// trusting fetchStatus. This resets on restart until the bot sets a bio again.
+let cachedBotBio = null;
 
 module.exports = [
 
@@ -146,6 +129,7 @@ module.exports = [
         }
         try {
           await sock.updateProfileStatus(input);
+          cachedBotBio = input;
           return sock.sendMessage(jid, { text: `✅ Profile status (bio) updated to:\n*${input}*` }, { quoted: msg });
         } catch (e) {
           return sock.sendMessage(jid, { text: `❌ Failed to update bio: ${e.message}` }, { quoted: msg });
@@ -155,16 +139,11 @@ module.exports = [
       // Case 2: replied to something -> post it to WhatsApp Status
       try {
         const statusJid = 'status@broadcast';
-        const statusJidList = await buildStatusJidList(sock);
-        const broadcastOpts = { statusJidList, backgroundColor: '#075E54', font: 1 };
-
         const quotedText = quotedMessage.conversation || quotedMessage.extendedTextMessage?.text;
 
         if (quotedText) {
-          await sock.sendMessage(statusJid, { text: input || quotedText }, broadcastOpts);
-          return sock.sendMessage(jid, {
-            text: `✅ Text posted to WhatsApp Status! (visible to ${statusJidList.length - 1} contact(s))`
-          }, { quoted: msg });
+          await sock.sendMessage(statusJid, { text: input || quotedText }, { backgroundColor: '#075E54', font: 1 });
+          return sock.sendMessage(jid, { text: '✅ Text posted to WhatsApp Status!' }, { quoted: msg });
         }
 
         const mediaType = Object.keys(quotedMessage).find((k) =>
@@ -197,19 +176,17 @@ module.exports = [
         const caption = input || quotedMessage[mediaType]?.caption || '';
 
         if (mediaType === 'imageMessage') {
-          await sock.sendMessage(statusJid, { image: mediaBuffer, caption }, broadcastOpts);
+          await sock.sendMessage(statusJid, { image: mediaBuffer, caption });
         } else if (mediaType === 'videoMessage') {
-          await sock.sendMessage(statusJid, { video: mediaBuffer, caption }, broadcastOpts);
+          await sock.sendMessage(statusJid, { video: mediaBuffer, caption });
         } else if (mediaType === 'audioMessage') {
           const mimetype = quotedMessage.audioMessage?.mimetype || 'audio/mp4';
-          await sock.sendMessage(statusJid, { audio: mediaBuffer, mimetype }, broadcastOpts);
+          await sock.sendMessage(statusJid, { audio: mediaBuffer, mimetype });
         } else if (mediaType === 'stickerMessage') {
-          await sock.sendMessage(statusJid, { sticker: mediaBuffer }, broadcastOpts);
+          await sock.sendMessage(statusJid, { sticker: mediaBuffer });
         }
 
-        return sock.sendMessage(jid, {
-          text: `✅ Media posted to WhatsApp Status! (visible to ${statusJidList.length - 1} contact(s))`
-        }, { quoted: msg });
+        return sock.sendMessage(jid, { text: '✅ Media posted to WhatsApp Status!' }, { quoted: msg });
 
       } catch (error) {
         console.error('[SETSTATUS ERROR]', error);
@@ -235,26 +212,37 @@ module.exports = [
 
       const isSelf = targetJid === botJid;
       const cleanNum = targetJid.split('@')[0];
+      const who = isSelf ? 'Bio' : `@${cleanNum}'s status`;
+
+      // WhatsApp won't return an account's own about-text over fetchStatus,
+      // so the self case is served from whatever .setstatus last cached.
+      if (isSelf) {
+        const bioText = cachedBotBio || 'No bio set yet — set one with .setstatus <text>.';
+        return sock.sendMessage(jid, { text: `${who}: ${bioText}` }, { quoted: msg });
+      }
 
       try {
-        const statusObj = await sock.fetchStatus(targetJid);
-        const statusText = statusObj?.status || 'No status set.';
-        const setAt = statusObj?.setAt ? new Date(statusObj.setAt).toLocaleDateString() : '';
+        const raw = await sock.fetchStatus(targetJid);
+        // Baileys has returned this field under a couple of different shapes
+        // across versions, so read it defensively instead of assuming one.
+        const record = Array.isArray(raw) ? raw[0] : raw;
+        const statusText = (
+          (typeof record?.status === 'string' && record.status) ||
+          record?.status?.status ||
+          ''
+        ).trim();
+        const setAt = record?.setAt || record?.status?.setAt;
 
-        const header = isSelf ? `📝 *Bot Status:*` : `📝 *Status for @${cleanNum}:*`;
-        const message = setAt
-          ? `${header}\n${statusText}\n\n_Set on: ${setAt}_`
-          : `${header}\n${statusText}`;
+        const message = statusText
+          ? `${who}: ${statusText}${setAt ? ` (set ${new Date(setAt).toLocaleDateString()})` : ''}`
+          : `${who}: no status set, or it's hidden by their privacy settings.`;
 
-        await sock.sendMessage(jid, {
-          text: message,
-          mentions: isSelf ? [] : [targetJid]
-        }, { quoted: msg });
+        await sock.sendMessage(jid, { text: message, mentions: [targetJid] }, { quoted: msg });
 
       } catch (error) {
         await sock.sendMessage(jid, {
-          text: `❌ Could not fetch status for ${isSelf ? 'the bot' : '@' + cleanNum}. (Privacy settings may hide it).`,
-          mentions: isSelf ? [] : [targetJid]
+          text: `❌ Could not fetch status for @${cleanNum}.`,
+          mentions: [targetJid]
         }, { quoted: msg });
       }
     }
@@ -421,40 +409,33 @@ module.exports = [
       }
 
       try {
-        await sock.chatModify(
-          {
-            clear: {
-              messages: [
-                {
-                  id: msg.key.id,
-                  fromMe: msg.key.fromMe || false,
-                  timestamp: msg.messageTimestamp,
-                },
-              ],
-            },
-          },
-          jid
-        );
-
+        // 'all' clears the entire chat outright, rather than only up to a
+        // single anchor message.
+        await sock.chatModify({ clear: 'all' }, jid);
         await sock.sendMessage(jid, { text: '🧹 *Chat history cleared successfully.*' });
       } catch (e) {
         console.error('[CLEAR CHAT ERROR]', e);
 
-        // Fallback: Empty the chat store if AppState sync is missing
+        // Fallback: anchor the clear to the current (latest) message, in case
+        // this Baileys version doesn't support the 'all' shorthand.
         try {
           await sock.chatModify(
             {
-              delete: true,
-              lastMessages: [
-                {
-                  key: msg.key,
-                  messageTimestamp: msg.messageTimestamp,
-                },
-              ],
+              clear: {
+                messages: [
+                  {
+                    id: msg.key.id,
+                    fromMe: msg.key.fromMe || false,
+                    timestamp: msg.messageTimestamp,
+                  },
+                ],
+              },
             },
             jid
           );
+          await sock.sendMessage(jid, { text: '🧹 *Chat history cleared successfully.*' });
         } catch (err) {
+          console.error('[CLEAR CHAT FALLBACK ERROR]', err);
           await sock.sendMessage(
             jid,
             { text: '❌ *Failed to clear chat:* WhatsApp multi-device session sync restricted this action.' },
