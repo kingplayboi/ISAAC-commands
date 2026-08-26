@@ -1,4 +1,6 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { isOwner } = require('../utils/isOwner');
 const settingsStore = require('../utils/settingsStore');
@@ -69,9 +71,16 @@ module.exports = {
         );
       }
 
-      // Convert buffer to base64 and persist in settings store
+      // 1. Persist in settingsStore (Survives Heroku dyno restarts)
       const base64Image = imageBuffer.toString('base64');
       settingsStore.set('menu_banner', base64Image);
+
+      // 2. Write to local disk assets/script.jpg
+      const assetsDir = path.join(__dirname, '../assets');
+      if (!fs.existsSync(assetsDir)) {
+        fs.mkdirSync(assetsDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(assetsDir, 'script.jpg'), imageBuffer);
 
       await sock.sendMessage(
         jid,

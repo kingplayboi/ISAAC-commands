@@ -84,7 +84,7 @@ const categories = {
     'FOOTBALL': ['livescore', 'standings', 'bundesliga', 'epl', 'laliga', 'ligue1', 'seriea', 'ucl', 'news', 'playersearch', 'teamsearch', 'fifa', 'fifaplayoffs', 'euro', 'eplscorers', 'laligascorers', 'bundesligascorers', 'serieascorers', 'ligue1scorers', 'uclscorers'],
     'CODING': ['enc', 'gpass', 'compile-py', 'compile-js', 'compile-c', 'compile-c++', 'base', 'unbase'],
     'MEDIA': ['s', 'take', 'photo', 'mix', 'smeme', 'vv', 'vv2', 'botpp', 'getpfp', 'removebg', 'similarimage', 'remini', 'remini2', 'save'],
-    'WHATSAPP': ['poll', 'react', 'del', 'setstatus', 'status', 'online', 'caption', 'doc', 'antiedit', 'cinfo', 'clear', 'save1'],
+    'WHATSAPP': ['poll', 'react', 'del', 'setstatus', 'status', 'caption', 'doc', 'antiedit', 'cinfo', 'clear', 'save1'],
     'CONVERTER': ['topdf', 'toexcel', 'toword', 'tovideo', 'toaudio', 'toimg', 'ocr', 'totext', 'carbon', 'cut', 'merge'],
     'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
     'MISC': ['isaac', 'trt', 'runtime', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
@@ -96,22 +96,29 @@ const categories = {
             menuMessage += ` ╰─────────────────\n`;
         }
 
-            const savedBanner = settingsStore.get('menu_banner', null);
-    const localImagePath = path.join(__dirname, '../assets/script.jpg');
+                 const savedBanner = settingsStore.get('menu_banner', null);
+        const localImagePath = path.join(__dirname, '../assets/script.jpg');
+        const fallbackUrl = 'https://i.imgur.com/3Z8Xy9G.jpeg';
 
-    let menuBanner = null;
+        let menuBanner = null;
 
-    if (savedBanner) {
-      menuBanner = Buffer.from(savedBanner, 'base64');
-    } else if (fs.existsSync(localImagePath)) {
-      menuBanner = fs.readFileSync(localImagePath);
-    }
+        if (savedBanner) {
+            menuBanner = Buffer.from(savedBanner, 'base64');
+        } else if (fs.existsSync(localImagePath)) {
+            menuBanner = fs.readFileSync(localImagePath);
+        } else {
+            try {
+                menuBanner = await downloadBuffer(fallbackUrl);
+            } catch (err) {
+                console.error('[MENU IMAGE FETCH ERROR]', err);
+            }
+        }
 
-    if (menuBanner) {
-      await sock.sendMessage(jid, { image: menuBanner, caption: menuMessage }, { quoted: msg });
-    } else {
-      await sock.sendMessage(jid, { text: menuMessage }, { quoted: msg });
-    }
-
+        if (menuBanner) {
+            await sock.sendMessage(jid, { image: menuBanner, caption: menuMessage }, { quoted: msg });
+        } else {
+            await sock.sendMessage(jid, { text: menuMessage }, { quoted: msg });
+        }
     },
 };
+
