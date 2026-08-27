@@ -1,17 +1,7 @@
-/**
- * commands/qr.js
- * ----------------
- * Create a QR code from text, or read a QR code from a replied image.
- * Usage:
- *   .qr <text>          -> generates a QR code image
- *   .qr                 -> (reply to an image) reads the QR code in it
- *
- * Requires: npm install qrcode jimp jsqr
- */
-
 const QRCode = require('qrcode');
 const Jimp = require('jimp');
 const jsQR = require('jsqr');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 module.exports = {
   name: 'qr',
@@ -25,10 +15,14 @@ module.exports = {
     // Reading mode: replying to an image with .qr (no text supplied)
     if (quoted?.imageMessage && !text) {
       try {
-        const media = await sock.downloadMediaMessage({
-          message: quoted,
-          key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant }
-        });
+        const media = await downloadMediaMessage(
+          {
+            message: quoted,
+            key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant }
+          },
+          'buffer',
+          {}
+        );
 
         const image = await Jimp.read(media);
         const { data, width, height } = image.bitmap;
@@ -40,6 +34,7 @@ module.exports = {
 
         await sock.sendMessage(jid, { text: `📷 *QR Content:*\n${code.data}` }, { quoted: msg });
       } catch (e) {
+        console.error('[QR READ ERROR]', e);
         await sock.sendMessage(jid, { text: '❌ Could not read QR code: ' + e.message }, { quoted: msg });
       }
       return;
@@ -54,7 +49,9 @@ module.exports = {
       const buffer = await QRCode.toBuffer(text, { width: 512 });
       await sock.sendMessage(jid, { image: buffer, caption: `✅ QR code for: ${text}` }, { quoted: msg });
     } catch (e) {
+      console.error('[QR GENERATE ERROR]', e);
       await sock.sendMessage(jid, { text: '❌ Could not generate QR code: ' + e.message }, { quoted: msg });
     }
   }
 };
+

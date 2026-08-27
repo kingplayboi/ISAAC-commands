@@ -6,7 +6,13 @@ const BASE = 'https://www.apkmirror.com';
 async function searchApkMirror(query) {
   const searchUrl = `${BASE}/?post_type=app_release&searchtype=apk&s=${encodeURIComponent(query)}`;
   const { data } = await axios.get(searchUrl, {
-    headers: { 'User-Agent': 'Mozilla/5.0' }
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Referer': `${BASE}/`,
+    },
+    timeout: 15000,
   });
   const $ = cheerio.load(data);
 
@@ -48,7 +54,12 @@ module.exports = {
 
       await sock.sendMessage(jid, { text }, { quoted: msg });
     } catch (e) {
-      await sock.sendMessage(jid, { text: '❌ APK search failed: ' + e.message }, { quoted: msg });
+      console.error('[APK ERROR]', e.response?.status, e.message);
+      const text = e.response?.status === 403
+        ? "❌ APKMirror blocked this request (403) — it runs Cloudflare bot protection that a User-Agent/Referer header alone often can't get past from a server IP. If this keeps happening, the request likely needs to come through a residential-IP proxy, or APKMirror needs to be swapped for a source without that protection."
+        : `❌ APK search failed: ${e.message}`;
+      await sock.sendMessage(jid, { text }, { quoted: msg });
     }
   }
 };
+

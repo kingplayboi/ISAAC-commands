@@ -16,16 +16,21 @@ module.exports = {
         return await sock.sendMessage(jid, { text: 'ℹ️ No blocked contacts.' }, { quoted: msg });
       }
 
-      const formattedList = list.map((item) => {
+      const formattedList = [];
+      const mentions = [];
+
+      for (const item of list) {
+        // @lid entries are WhatsApp's privacy-preserving linked IDs, not real
+        // phone numbers — formatting them as "+<digits>" produces garbage.
+        if (item.endsWith('@lid')) {
+          formattedList.push(`• Hidden contact (LID: ${item.split('@')[0]})`);
+          continue;
+        }
         const rawNum = item.split('@')[0].split(':')[0];
         const cleanNum = rawNum.replace(/[^0-9]/g, '');
-        return `• +${cleanNum} (@${cleanNum})`;
-      });
-
-      const mentions = list.map((item) => {
-        const rawNum = item.split('@')[0].split(':')[0];
-        return `${rawNum.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
-      });
+        formattedList.push(`• +${cleanNum} (@${cleanNum})`);
+        mentions.push(`${cleanNum}@s.whatsapp.net`);
+      }
 
       const text = `🚫 *Blocked Contacts (${list.length}):*\n\n${formattedList.join('\n')}`;
 
@@ -35,3 +40,4 @@ module.exports = {
     }
   },
 };
+

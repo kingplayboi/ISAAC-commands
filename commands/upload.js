@@ -47,14 +47,22 @@ module.exports = {
       form.append('reqtype', 'fileupload');
       form.append('fileToUpload', buffer, { filename: 'file' });
 
+      // catbox sits behind Cloudflare and can 412 requests with no
+      // browser-like User-Agent — add one instead of relying on axios' default.
       const res = await axios.post('https://catbox.moe/user/api.php', form, {
-        headers: form.getHeaders(),
+        headers: {
+          ...form.getHeaders(),
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        },
+        timeout: 60000,
       });
 
       await sock.sendMessage(jid, { text: `Media Link:-\n\n${res.data}` }, { quoted: msg });
     } catch (error) {
-      console.error('[UPLOAD ERROR]', error);
-      await sock.sendMessage(jid, { text: `Upload failed: ${error.message}` }, { quoted: msg });
+      console.error('[UPLOAD ERROR]', error.response?.status, error.response?.data || error.message);
+      const reason = error.response?.status ? `catbox returned ${error.response.status}` : error.message;
+      await sock.sendMessage(jid, { text: `Upload failed: ${reason}` }, { quoted: msg });
     }
   },
 };
+
