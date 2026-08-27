@@ -1,38 +1,32 @@
-const axios = require('axios');
+const https = require('https');
 const { KEITH_BASE } = require('../config/apis');
 
-const API = KEITH_BASE;
+// Same helper shape as commands/ai.js's httpsGetJSON — reusing the pattern
+// that's already confirmed working against Keith's response format.
+function httpsGetJSON(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch (e) { reject(e); }
+      });
+    }).on('error', reject);
+  });
+}
 
-function extractSpeech(data) {
-  if (!data) return null;
-  if (typeof data === 'string') return data.trim() || null;
-  if (data.status === false || data.success === false) return null;
+async function fetchSpeech(topic) {
+  const url = `${KEITH_BASE}/ai/speechwriter?topic=${encodeURIComponent(topic)}&length=short&type=dedication&tone=serious`;
+  const json = await httpsGetJSON(url);
 
-  const candidates = [
-    data.result,
-    data.result?.speech,
-    data.result?.data,
-    data.result?.data?.speech,
-    data.result?.data?.data,
-    data.result?.data?.data?.speech,
-    data.speech,
-    data.response,
-    data.data,
-  ];
-
-  for (const c of candidates) {
-    if (typeof c === 'string' && c.trim()) return c;
+  if (!json.status || !json.result) {
+    // Keith puts a human-readable reason in `result` even on failure
+    // (confirmed via curl on the ytmp4 endpoint) — surface it if present.
+    throw new Error(typeof json.result === 'string' ? json.result : (json.error || 'API returned no result.'));
   }
 
-  // A few APIs nest the text under a differently-named field on an object
-  for (const c of candidates) {
-    if (c && typeof c === 'object') {
-      const nested = c.speech || c.text || c.content || c.message;
-      if (typeof nested === 'string' && nested.trim()) return nested;
-    }
-  }
-
-  return null;
+  return typeof json.result === 'string' ? json.result : JSON.stringify(json.result);
 }
 
 module.exports = {
@@ -58,38 +52,26 @@ module.exports = {
 
     let speech = null;
 
-    // 1. Try primary API
+    // 1. Primary: dedicated speechwriter endpoint
     try {
-      const url = `${API}/ai/speechwriter?topic=${encodeURIComponent(query)}&length=short&type=dedication&tone=serious`;
-      const { data } = await axios.get(url, {
-        timeout: 15000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json, text/plain, */*'
-        }
-      });
-
-      speech = extractSpeech(data);
-      if (!speech) {
-        console.error('[SPEECHWRITER] Primary API returned no usable speech. Raw:', JSON.stringify(data).slice(0, 500));
-      }
+      speech = await fetchSpeech(query);
     } catch (e) {
-      console.error('[SPEECHWRITER] Primary API request failed:', e.response?.status, e.response?.data || e.message);
+      console.error('[SPEECHWRITER] Primary endpoint failed:', e.message);
     }
 
-    // 2. Fallback to Gemini if primary failed or returned nothing usable
+    // 2. Fallback: the same /ai/gpt4 endpoint the .gpt/.groq/.gemini/.bing
+    // commands already use successfully, with a speech-writing prompt.
     if (!speech) {
       try {
-        const fallbackUrl = `${API}/ai/gemini?q=${encodeURIComponent(
-          `Write a powerful, well-crafted, serious speech on the following topic: "${query}". Keep it well-formatted with clear paragraphs.`
-        )}`;
-        const { data } = await axios.get(fallbackUrl, { timeout: 30000 });
-        speech = extractSpeech(data);
-        if (!speech) {
-          console.error('[SPEECHWRITER] Gemini fallback returned no usable speech. Raw:', JSON.stringify(data).slice(0, 500));
+        const prompt = `Write a powerful, well-crafted, serious speech on the following topic: "${query}". Keep it well-formatted with clear paragraphs.`;
+        const json = await httpsGetJSON(`${KEITH_BASE}/ai/gpt4?q=${encodeURIComponent(prompt)}`);
+        if (json.status && json.result) {
+          speech = typeof json.result === 'string' ? json.result : JSON.stringify(json.result);
+        } else {
+          console.error('[SPEECHWRITER] Fallback returned no usable result. Raw:', JSON.stringify(json).slice(0, 500));
         }
       } catch (err) {
-        console.error('[SPEECHWRITER] Gemini fallback request failed:', err.response?.status, err.response?.data || err.message);
+        console.error('[SPEECHWRITER] Fallback request failed:', err.message);
       }
     }
 
