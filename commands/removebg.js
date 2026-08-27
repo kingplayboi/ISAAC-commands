@@ -1,62 +1,89 @@
-/**
- * commands/removebg.js
- * -----------------------
- * Remove the background from a replied image using the remove.bg API.
- * Usage: reply to an image with .removebg
- *
- * Requires a free remove.bg API key: https://www.remove.bg/api
- * (free tier: 50 images/month). Set REMOVEBG_API_KEY in your .env
- */
 const axios = require('axios');
+const fs = require('fs');
+const FormData = require('form-data');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const os = require('os');
+const path = require('path');
 
 module.exports = {
   name: 'removebg',
-  description: 'Remove the background from an image. Usage: reply to an image with .removebg',
+  aliases: ['rmbg', 'bgremove', 'nobg'],
+  description: 'Remove background from a quoted image',
+
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
-
-    if (!process.env.REMOVEBG_API_KEY) {
-      return sock.sendMessage(
-        jid,
-        { text: '❌ Background removal is not configured. Get a free key at remove.bg/api and set REMOVEBG_API_KEY in .env' },
-        { quoted: msg }
-      );
-    }
-
     const ctx = msg.message?.extendedTextMessage?.contextInfo;
     const quoted = ctx?.quotedMessage;
 
     if (!quoted?.imageMessage) {
-      return sock.sendMessage(jid, { text: '❌ Reply to an image with .removebg' }, { quoted: msg });
+      return await sock.sendMessage(jid, { text: '🖼️ Reply to an image with *.removebg* to remove its background.' }, { quoted: msg });
     }
 
-    await sock.sendMessage(jid, { text: '✂️ Removing background...' }, { quoted: msg });
+    let filePath;
 
     try {
-      const media = await sock.downloadMediaMessage({
-        message: quoted,
-        key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant },
-      });
+      await sock.sendMessage(jid, { text: '🧼 Removing background...' }, { quoted: msg });
 
-      const FormData = require('form-data');
-      const form = new FormData();
-      form.append('image_file', media, 'image.jpg');
-      form.append('size', 'auto');
+      const buffer = await downloadMediaMessage(
+        { key: { remoteJid: jid, id: ctx.stanzaId, fromMe: false, participant: ctx.participant }, message: quoted },
+        'buffer',
+        {},
+        { reuploadRequest: sock.updateMediaMessage }
+      );
 
-      const res = await axios.post('https://api.remove.bg/v1.0/removebg', form, {
-        headers: { ...form.getHeaders(), 'X-Api-Key': process.env.REMOVEBG_API_KEY },
-        responseType: 'arraybuffer',
-        validateStatus: () => true,
-      });
+      filePath = path.join(os.tmpdir(), `removebg_${Date.now()}.jpg`);
+      fs.writeFileSync(filePath, buffer);
 
-      if (res.status !== 200) {
-        const errText = Buffer.from(res.data).toString('utf8');
-        throw new Error(`remove.bg error (${res.status}): ${errText.slice(0, 200)}`);
+      // Step 1: create job
+      const formData = new FormData();
+      formData.append('image_file', fs.createReadStream(filePath));
+      formData.append('turnstile_token', '');
+
+      const createRes = await axios.post(
+        'https://api.ezremove.ai/api/ez-remove/background-remove/create-job-v2',
+        formData,
+        {
+          headers: {
+            'product-serial': '07cc2e862644a6a1860194a9f6a6f70f',
+            ...formData.getHeaders(),
+          },
+          timeout: 30000,
+        }
+      );
+
+      const jobId = createRes.data?.result?.job_id;
+      if (!jobId) {
+        return await sock.sendMessage(jid, { text: '❌ Failed to create removebg job.' }, { quoted: msg });
       }
 
-      await sock.sendMessage(jid, { image: Buffer.from(res.data), caption: '✅ Background removed' }, { quoted: msg });
-    } catch (e) {
-      await sock.sendMessage(jid, { text: '❌ Could not remove background: ' + e.message }, { quoted: msg });
+      // Step 2: poll job result
+      let outputUrl;
+      for (let i = 0; i < 10; i++) {
+        const getRes = await axios.get(
+          `https://api.ezremove.ai/api/ez-remove/background-remove/get-job/${jobId}`
+        );
+        outputUrl = getRes.data?.result?.output?.[0];
+        if (outputUrl) break;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      if (!outputUrl) {
+        return await sock.sendMessage(jid, { text: '⚠️ Background removal not ready. Try again shortly.' }, { quoted: msg });
+      }
+
+      // Step 3: send result image
+      await sock.sendMessage(jid, {
+        image: { url: outputUrl },
+        caption: '✅ Background removed',
+      }, { quoted: msg });
+
+    } catch (error) {
+      console.error('[REMOVEBG ERROR]', error);
+      await sock.sendMessage(jid, { text: '❌ Failed to remove background. Try a different image.' }, { quoted: msg });
+    } finally {
+      if (filePath && fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch {}
+      }
     }
   },
 };

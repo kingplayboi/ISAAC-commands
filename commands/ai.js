@@ -260,63 +260,97 @@ Created by Isaac and Muarabu.
   },
 
   // ── DALL (Image generation via Pollinations) ─────────────────────────────
-  {
-    name: 'dall',
-    description: 'Generate AI image. Usage: .dall your prompt',
-    async execute(sock, msg, args) {
-      const jid = msg.key.remoteJid;
-      const prompt = args.join(' ');
-      if (!prompt) return sock.sendMessage(jid, { text: '❌ Usage: .dall your image prompt' }, { quoted: msg });
+{
+  name: 'dall',
+  description: 'Generate AI image. Usage: .dall your prompt',
+  async execute(sock, msg, args) {
+    const jid = msg.key.remoteJid;
+    const prompt = args.join(' ');
+    if (!prompt) return sock.sendMessage(jid, { text: '❌ Usage: .dall your image prompt' }, { quoted: msg });
 
-      const thinkingMsg = await sock.sendMessage(jid, { text: '🎨 Generating image...' }, { quoted: msg });
+    const thinkingMsg = await sock.sendMessage(jid, { text: '🎨 Generating image...' }, { quoted: msg });
 
-      try {
-        const encoded = encodeURIComponent(prompt);
-        const url = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&nologo=true`;
-        const buffer = await downloadImage(url);
+    try {
+      const encoded = encodeURIComponent(prompt);
+      const url = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&nologo=true`;
+      const buffer = await downloadImage(url);
 
-        await sock.sendMessage(jid, { image: buffer, caption: `🎨 *AI Image*\n📝 Prompt: ${prompt}` }, { quoted: msg });
-        await sock.sendMessage(jid, { delete: thinkingMsg.key }).catch(() => {});
-      } catch (e) {
-        await sock.sendMessage(jid, { text: '❌ Image generation error: ' + e.message, edit: thinkingMsg.key });
-      }
-    },
+      await sock.sendMessage(jid, { image: buffer, caption: `🎨 *AI Image*\n📝 Prompt: ${prompt}` }, { quoted: msg });
+      await sock.sendMessage(jid, { delete: thinkingMsg.key }).catch(() => {});
+    } catch (e) {
+      await sock.sendMessage(jid, { text: '❌ Image generation error: ' + e.message, edit: thinkingMsg.key });
+    }
   },
+},
 
+// ── UPSCALE (via Remini API, matches .remini) ─────────────────────────────
+{
+  name: 'upscale',
+  description: 'Upscale an image using AI. Reply to an image with .upscale',
+  async execute(sock, msg) {
+    const jid = msg.key.remoteJid;
+    const ctx = msg.message?.extendedTextMessage?.contextInfo;
+    const quoted = ctx?.quotedMessage;
 
-  // ── UPSCALE (via Pollinations) ──────────────────────────────────────────
-  {
-    name: 'upscale',
-    description: 'Upscale an image using AI. Reply to an image with .upscale',
-    async execute(sock, msg) {
-      const jid = msg.key.remoteJid;
-      const ctx = msg.message?.extendedTextMessage?.contextInfo;
-      const quoted = ctx?.quotedMessage;
+    if (!quoted?.imageMessage) {
+      return sock.sendMessage(jid, { text: '❌ Reply to an image with .upscale' }, { quoted: msg });
+    }
 
-      if (!quoted?.imageMessage) {
-        return sock.sendMessage(jid, { text: '❌ Reply to an image with .upscale' }, { quoted: msg });
+    const thinkingMsg = await sock.sendMessage(jid, { text: '🔍 Upscaling image...' }, { quoted: msg });
+
+    const axios = require('axios');
+    const fs = require('fs');
+    const FormData = require('form-data');
+    const os = require('os');
+    const path = require('path');
+    const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
+    let filePath;
+
+    try {
+      const buffer = await downloadMediaMessage(
+        { key: { remoteJid: jid, id: ctx.stanzaId, fromMe: false, participant: ctx.participant }, message: quoted },
+        'buffer',
+        {},
+        { reuploadRequest: sock.updateMediaMessage }
+      );
+
+      filePath = path.join(os.tmpdir(), `upscale_${Date.now()}.jpg`);
+      fs.writeFileSync(filePath, buffer);
+
+      const form = new FormData();
+      form.append('files[]', fs.createReadStream(filePath));
+      const uploadRes = await axios.post('https://uguu.se/upload', form, {
+        headers: form.getHeaders(),
+        timeout: 30000,
+      });
+
+      const imageUrl = uploadRes.data?.files?.[0]?.url;
+      if (!imageUrl) throw new Error('Image upload failed');
+
+      const res = await axios.get(`https://apis.davidcyril.name.ng/remini?url=${encodeURIComponent(imageUrl)}`, {
+        responseType: 'arraybuffer',
+        timeout: 30000,
+      });
+
+      const contentType = res.headers['content-type'] || '';
+      if (!contentType.includes('image')) throw new Error('API did not return an image');
+
+      await sock.sendMessage(jid, {
+        image: Buffer.from(res.data),
+        mimetype: 'image/png',
+        caption: '✅ *Upscaled Image*\n_Powered by ISAAC-MD_',
+      }, { quoted: msg });
+      await sock.sendMessage(jid, { delete: thinkingMsg.key }).catch(() => {});
+    } catch (e) {
+      await sock.sendMessage(jid, { text: '❌ Upscale error: ' + e.message, edit: thinkingMsg.key });
+    } finally {
+      if (filePath && fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch {}
       }
-
-      const thinkingMsg = await sock.sendMessage(jid, { text: '🔍 Upscaling image...' }, { quoted: msg });
-
-      try {
-        const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-        const media = await downloadMediaMessage({
-          message: quoted,
-          key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant },
-        });
-
-        const base64 = media.toString('base64');
-        const url = `https://image.pollinations.ai/prompt/upscale+enhance+4k+quality?width=1024&height=1024&nologo=true&image=${encodeURIComponent('data:image/jpeg;base64,' + base64)}`;
-        const buffer = await downloadImage(url);
-
-        await sock.sendMessage(jid, { image: buffer, caption: '✅ *Upscaled Image*' }, { quoted: msg });
-        await sock.sendMessage(jid, { delete: thinkingMsg.key }).catch(() => {});
-      } catch (e) {
-        await sock.sendMessage(jid, { text: '❌ Upscale error: ' + e.message, edit: thinkingMsg.key });
-      }
-    },
+    }
   },
+},
 
 ];
 
