@@ -1,57 +1,20 @@
-const crypto = require('crypto');
-
-const LOWER = 'abcdefghijklmnopqrstuvwxyz';
-const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const DIGITS = '0123456789';
-const SYMBOLS = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-
-function generatePassword(length, includeSymbols) {
-  const charset = LOWER + UPPER + DIGITS + (includeSymbols ? SYMBOLS : '');
-  const bytes = crypto.randomBytes(length);
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    password += charset[bytes[i] % charset.length];
-  }
-  return password;
-}
-
 module.exports = {
   name: 'gpass',
-  description: 'Generates a secure random password. Usage: .gpass [length] [nosymbols]',
+  aliases: ['genpassword'],
+  description: 'Generate a strong password. Usage: .gpass <length> (default 16, 4-64)',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
+    const length = parseInt(args[0]) || 16;
 
-    let length = 16;
-    let includeSymbols = true;
-
-    for (const arg of args) {
-      if (/^\d+$/.test(arg)) {
-        length = parseInt(arg, 10);
-      } else if (arg.toLowerCase() === 'nosymbols') {
-        includeSymbols = false;
-      }
+    if (length < 4 || length > 64) {
+      return sock.sendMessage(jid, { text: 'Password length must be between 4 and 64.' }, { quoted: msg });
     }
 
-    if (length < 6 || length > 128) {
-      return sock.sendMessage(
-        jid,
-        { text: '❌ Length must be between 6 and 128 characters.' },
-        { quoted: msg }
-      );
-    }
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+    let password = '';
+    for (let i = 0; i < length; i++) password += chars[Math.floor(Math.random() * chars.length)];
 
-    const password = generatePassword(length, includeSymbols);
-
-    await sock.sendMessage(
-      jid,
-      {
-        text:
-          `🔑 *Generated Password*\n\n` +
-          `\`\`\`${password}\`\`\`\n\n` +
-          `📏 Length: ${length}${includeSymbols ? '' : ' (no symbols)'}\n` +
-          `⚠️ This message will not be auto-deleted — remove it once saved.`,
-      },
-      { quoted: msg }
-    );
+    await sock.sendMessage(jid, { text: `🔐 *Generated Password (${length} chars):*\n\`${password}\`\n\n_Keep this safe!_` }, { quoted: msg });
+    await sock.sendMessage(jid, { text: password }, { quoted: msg });
   },
 };

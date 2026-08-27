@@ -1,47 +1,29 @@
-const vm = require('vm');
-
-const TIMEOUT_MS = 3000;
+const { node } = require('compile-run');
 
 module.exports = {
   name: 'compile-js',
-  description: 'Runs a JavaScript snippet and returns its console output. Usage: .compile-js <code>',
+  aliases: ['run-js'],
+  description: 'Run JavaScript code. Usage: .run-js <code> (or reply to a message containing code)',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
-    const code = args.join(' ');
+    const ctx = msg.message?.extendedTextMessage?.contextInfo;
+    const quotedMsg = ctx?.quotedMessage;
+    const quotedText = quotedMsg?.conversation || quotedMsg?.extendedTextMessage?.text || null;
+    const sourcecode = quotedText || args.join(' ');
 
-    if (!code) {
-      return sock.sendMessage(
-        jid,
-        { text: '❌ Usage: .compile-js <code>\nExample: .compile-js console.log(1 + 1)' },
-        { quoted: msg }
-      );
+    if (!sourcecode) {
+      return sock.sendMessage(jid, { text: 'Quote/tag a Js code to compile.' }, { quoted: msg });
     }
 
-    const logs = [];
-    const sandbox = {
-      console: {
-        log: (...vals) => logs.push(vals.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join(' ')),
-        error: (...vals) => logs.push('ERR: ' + vals.map(String).join(' ')),
-      },
-    };
-
     try {
-      const context = vm.createContext(sandbox);
-      const script = new vm.Script(code);
-      script.runInContext(context, { timeout: TIMEOUT_MS });
-
-      const output = logs.length ? logs.join('\n') : '(no console output)';
-      await sock.sendMessage(
-        jid,
-        { text: `🟨 *JavaScript Output*\n\`\`\`${output}\`\`\`` },
-        { quoted: msg }
-      );
-    } catch (e) {
-      await sock.sendMessage(
-        jid,
-        { text: `❌ *Error*\n\`\`\`${e.message}\`\`\`` },
-        { quoted: msg }
-      );
+      const result = await node.runSource(sourcecode);
+      if (result.stdout) await sock.sendMessage(jid, { text: result.stdout }, { quoted: msg });
+      if (result.stderr) await sock.sendMessage(jid, { text: result.stderr }, { quoted: msg });
+      if (!result.stdout && !result.stderr) {
+        await sock.sendMessage(jid, { text: '_No output._' }, { quoted: msg });
+      }
+    } catch (err) {
+      await sock.sendMessage(jid, { text: String(err) }, { quoted: msg });
     }
   },
 };
