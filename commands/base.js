@@ -1,3 +1,6 @@
+const { isOwner } = require('../utils/isOwner');
+const { isSudo } = require('../utils/isSudo');
+
 module.exports = {
   name: 'base',
   aliases: ['base64', 'encodebase64'],
@@ -8,6 +11,10 @@ module.exports = {
     const jid = rawJid.endsWith('@lid') && msg.key.remoteJidAlt
       ? msg.key.remoteJidAlt
       : rawJid;
+
+    if (!isOwner(msg) && !isSudo(msg)) {
+      return sock.sendMessage(jid, { text: '*Command meant for the owner*' }, { quoted: msg });
+    }
 
     let textToEncode = args.join(" ");
     const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;

@@ -1,4 +1,4 @@
-const { isSudo } = require('../utils/isSudo');
+const { isOwner } = require('../utils/isOwner');
 const { jidNormalizedUser } = require('@whiskeysockets/baileys');
 
 module.exports = {
@@ -9,8 +9,8 @@ module.exports = {
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
 
-    if (!isSudo(msg)) {
-      return;
+    if (!isOwner(msg)) {
+      return sock.sendMessage(jid, { text: '*Command meant for the owner*' }, { quoted: msg });
     }
 
     const link = args[0];
