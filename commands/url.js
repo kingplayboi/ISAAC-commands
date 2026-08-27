@@ -2,6 +2,60 @@ const axios = require('axios');
 const FormData = require('form-data');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+// ── Upload hosts, tried in order until one works ─────────────────────────
+// catbox has been actively blocking known hosting/VPS IP ranges — a 412
+// there regardless of headers is that signature, not something a header
+// fixes. 0x0.st is the fallback; it also requires a User-Agent or it
+// rejects the request outright.
+
+async function uploadCatbox(buffer, filename) {
+  const form = new FormData();
+  form.append('reqtype', 'fileupload');
+  form.append('fileToUpload', buffer, { filename });
+  const res = await axios.post('https://catbox.moe/user/api.php', form, {
+    headers: { ...form.getHeaders(), 'User-Agent': BROWSER_UA },
+    timeout: 30000,
+  });
+  const url = String(res.data).trim();
+  if (!url.startsWith('http')) throw new Error(url || 'unexpected response');
+  return url;
+}
+
+async function upload0x0(buffer, filename) {
+  const form = new FormData();
+  form.append('file', buffer, { filename });
+  const res = await axios.post('https://0x0.st', form, {
+    headers: { ...form.getHeaders(), 'User-Agent': BROWSER_UA },
+    timeout: 30000,
+  });
+  const url = String(res.data).trim();
+  if (!url.startsWith('http')) throw new Error(url || 'unexpected response');
+  return url;
+}
+
+const UPLOAD_HOSTS = [
+  { name: 'catbox', upload: uploadCatbox },
+  { name: '0x0.st', upload: upload0x0 },
+];
+
+async function uploadToAnyHost(buffer, filename) {
+  const failures = [];
+  for (const { name, upload } of UPLOAD_HOSTS) {
+    try {
+      const url = await upload(buffer, filename);
+      console.log(`[URL] Upload succeeded via ${name}`);
+      return url;
+    } catch (e) {
+      const reason = e.response?.status ? `HTTP ${e.response.status}` : e.message;
+      console.error(`[URL] ${name} failed:`, reason);
+      failures.push(`${name}: ${reason}`);
+    }
+  }
+  throw new Error(failures.join(' | '));
+}
+
 function extractQuotedImage(msg) {
   const ctx = msg.message?.extendedTextMessage?.contextInfo;
   const quoted = ctx?.quotedMessage;
@@ -42,25 +96,11 @@ module.exports = {
         return await sock.sendMessage(jid, { text: 'Media is too large (max 10MB).' }, { quoted: msg });
       }
 
-      const form = new FormData();
-      form.append('reqtype', 'fileupload');
-      form.append('fileToUpload', buffer, { filename: 'image.jpg' });
-
-      // catbox sits behind Cloudflare and can 412 requests with no
-      // browser-like User-Agent — add one instead of relying on axios' default.
-      const res = await axios.post('https://catbox.moe/user/api.php', form, {
-        headers: {
-          ...form.getHeaders(),
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        },
-        timeout: 30000,
-      });
-
-      await sock.sendMessage(jid, { text: `Media Link:-\n\n${res.data}` }, { quoted: msg });
+      const link = await uploadToAnyHost(buffer, 'image.jpg');
+      await sock.sendMessage(jid, { text: `Media Link:-\n\n${link}` }, { quoted: msg });
     } catch (error) {
-      console.error('[URL ERROR]', error.response?.status, error.response?.data || error.message);
-      const reason = error.response?.status ? `catbox returned ${error.response.status}` : error.message;
-      await sock.sendMessage(jid, { text: `❌ Upload failed: ${reason}` }, { quoted: msg });
+      console.error('[URL ERROR]', error.message);
+      await sock.sendMessage(jid, { text: `❌ Upload failed on all hosts: ${error.message}` }, { quoted: msg });
     }
   },
 };

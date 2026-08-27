@@ -1,8 +1,6 @@
 const https = require('https');
 const { KEITH_BASE } = require('../config/apis');
 
-// Same helper shape as commands/ai.js's httpsGetJSON — reusing the pattern
-// that's already confirmed working against Keith's response format.
 function httpsGetJSON(url) {
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
@@ -19,14 +17,17 @@ function httpsGetJSON(url) {
 async function fetchSpeech(topic) {
   const url = `${KEITH_BASE}/ai/speechwriter?topic=${encodeURIComponent(topic)}&length=short&type=dedication&tone=serious`;
   const json = await httpsGetJSON(url);
+  const result = json.result;
 
-  if (!json.status || !json.result) {
-    // Keith puts a human-readable reason in `result` even on failure
-    // (confirmed via curl on the ytmp4 endpoint) — surface it if present.
-    throw new Error(typeof json.result === 'string' ? json.result : (json.error || 'API returned no result.'));
+  if (result && typeof result === 'object') {
+    throw new Error(result.error || result.message || 'upstream speechwriter service returned a failure.');
   }
 
-  return typeof json.result === 'string' ? json.result : JSON.stringify(json.result);
+  if (!json.status || typeof result !== 'string' || !result.trim()) {
+    throw new Error(json.error || 'API returned no usable result.');
+  }
+
+  return result;
 }
 
 module.exports = {
@@ -52,21 +53,18 @@ module.exports = {
 
     let speech = null;
 
-    // 1. Primary: dedicated speechwriter endpoint
     try {
       speech = await fetchSpeech(query);
     } catch (e) {
       console.error('[SPEECHWRITER] Primary endpoint failed:', e.message);
     }
 
-    // 2. Fallback: the same /ai/gpt4 endpoint the .gpt/.groq/.gemini/.bing
-    // commands already use successfully, with a speech-writing prompt.
     if (!speech) {
       try {
         const prompt = `Write a powerful, well-crafted, serious speech on the following topic: "${query}". Keep it well-formatted with clear paragraphs.`;
         const json = await httpsGetJSON(`${KEITH_BASE}/ai/gpt4?q=${encodeURIComponent(prompt)}`);
-        if (json.status && json.result) {
-          speech = typeof json.result === 'string' ? json.result : JSON.stringify(json.result);
+        if (json.status && typeof json.result === 'string' && json.result.trim()) {
+          speech = json.result;
         } else {
           console.error('[SPEECHWRITER] Fallback returned no usable result. Raw:', JSON.stringify(json).slice(0, 500));
         }

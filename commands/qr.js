@@ -1,7 +1,12 @@
 const QRCode = require('qrcode');
-const Jimp = require('jimp');
 const jsQR = require('jsqr');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
+// Jimp v1.x exports the class as a NAMED export (`{ Jimp }`), while v0.x
+// exported it as the default (`module.exports = Jimp`). Support both so
+// this doesn't break again on the next `npm install`/version bump.
+const jimpModule = require('jimp');
+const Jimp = jimpModule.Jimp || jimpModule.default || jimpModule;
 
 module.exports = {
   name: 'qr',
@@ -15,6 +20,10 @@ module.exports = {
     // Reading mode: replying to an image with .qr (no text supplied)
     if (quoted?.imageMessage && !text) {
       try {
+        if (typeof Jimp?.read !== 'function') {
+          throw new Error('Jimp.read is unavailable — check the installed jimp version (npm ls jimp).');
+        }
+
         const media = await downloadMediaMessage(
           {
             message: quoted,
