@@ -1,88 +1,85 @@
-/**
- * commands/tovideo.js
- * ---------------------
- * Converts a still image into a short video clip.
- *
- * Usage:
- *   Reply to an image with .tovideo
- */
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { execFile } = require('child_process');
-const { promisify } = require('util');
-const execFileAsync = promisify(execFile);
-
-const CLIP_DURATION_SECONDS = 5;
-
-function getRepliedImage(msg) {
-  const m = msg.message;
-  if (m?.imageMessage) return { message: m, key: msg.key };
-
-  const ctx = m?.extendedTextMessage?.contextInfo;
-  const quoted = ctx?.quotedMessage;
-  if (quoted?.imageMessage) {
-    return {
-      message: quoted,
-      key: {
-        remoteJid: msg.key.remoteJid,
-        id: ctx.stanzaId,
-        fromMe: false,
-        participant: ctx.participant,
-      },
-    };
-  }
-  return null;
-}
+const { execSync } = require('child_process');
+const ffmpegPath = require('ffmpeg-static');
+const sharp = require('sharp');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 module.exports = {
   name: 'tovideo',
-  description: 'Converts an image into a short video. Reply to an image with .tovideo',
+  aliases: ['mp4', 'tovid'],
+  description: 'Convert a quoted animated sticker to video. Reply to an animated sticker with .tovideo',
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
-    const target = getRepliedImage(msg);
+    const ctx = msg.message?.extendedTextMessage?.contextInfo;
+    const quoted = ctx?.quotedMessage;
 
-    if (!target) {
-      return sock.sendMessage(
-        jid,
-        { text: '❌ Reply to an image with .tovideo to convert it to a short video.' },
-        { quoted: msg }
-      );
+    if (!quoted?.stickerMessage) {
+      return sock.sendMessage(jid, { text: `📎 Reply to an *animated sticker* with *.tovideo*` }, { quoted: msg });
     }
 
-    await sock.sendMessage(jid, { react: { text: '🎞️', key: msg.key } });
+    const mimetype = quoted.stickerMessage.mimetype || '';
+    if (!/webp/.test(mimetype)) {
+      return sock.sendMessage(jid, { text: `⚠️ That's not a sticker.` }, { quoted: msg });
+    }
 
-    let tmpImage, tmpVideo;
+    const id = Date.now();
+    const tmpDir = os.tmpdir();
+    const framesDir = path.join(tmpDir, `frames_${id}`);
+    const outputPath = path.join(tmpDir, `video_${id}.mp4`);
+
     try {
-      const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+      await sock.sendMessage(jid, { text: '🎬 _Converting sticker to video..._' }, { quoted: msg });
+
       const buffer = await downloadMediaMessage(
-        { key: target.key, message: target.message },
+        { message: quoted, key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant } },
         'buffer',
-        {},
-        { reuploadRequest: sock.updateMediaMessage }
+        {}
       );
 
-      tmpImage = path.join(os.tmpdir(), `tovideo_${Date.now()}.png`);
-      tmpVideo = path.join(os.tmpdir(), `tovideo_${Date.now()}.mp4`);
-      fs.writeFileSync(tmpImage, buffer);
+      fs.mkdirSync(framesDir, { recursive: true });
 
-      await execFileAsync('ffmpeg', [
-        '-y',
-        '-loop', '1',
-        '-i', tmpImage,
-        '-t', String(CLIP_DURATION_SECONDS),
-        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
-        '-pix_fmt', 'yuv420p',
-        tmpVideo,
-      ]);
+      const image = sharp(buffer, { animated: true });
+      const metadata = await image.metadata();
+      const pages = metadata.pages || 1;
 
-      await sock.sendMessage(jid, { video: fs.readFileSync(tmpVideo) }, { quoted: msg });
-      await sock.sendMessage(jid, { react: { text: '', key: msg.key } });
-    } catch (e) {
-      await sock.sendMessage(jid, { text: `❌ Error creating video: ${e.message}` }, { quoted: msg });
+      if (pages <= 1) {
+        return sock.sendMessage(jid, { text: '⚠️ This is a *static* sticker, not animated!' }, { quoted: msg });
+      }
+
+      for (let i = 0; i < pages; i++) {
+        const frameBuf = await sharp(buffer, { animated: false, page: i }).png().toBuffer();
+        const framePath = path.join(framesDir, `frame_${String(i).padStart(4, '0')}.png`);
+        fs.writeFileSync(framePath, frameBuf);
+      }
+
+      try {
+        execSync(
+          `"${ffmpegPath}" -y -framerate 15 -i "${framesDir}/frame_%04d.png" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuv420p -movflags faststart "${outputPath}"`,
+          { timeout: 60000, stdio: 'pipe' }
+        );
+      } catch (e) {
+        return sock.sendMessage(jid, { text: '❌ ffmpeg error: ' + (e.stderr?.toString()?.slice(0, 200) || e.message) }, { quoted: msg });
+      }
+
+      if (!fs.existsSync(outputPath)) {
+        return sock.sendMessage(jid, { text: '❌ Output file not created' }, { quoted: msg });
+      }
+
+      const videoBuffer = fs.readFileSync(outputPath);
+      await sock.sendMessage(jid, {
+        video: videoBuffer,
+        caption: '*Sticker converted successfully to Video*'
+      }, { quoted: msg });
+
+    } catch (err) {
+      console.error('[TOVIDEO ERROR]', err.message);
+      await sock.sendMessage(jid, { text: '❌ Error: ' + err.message }, { quoted: msg });
     } finally {
-      [tmpImage, tmpVideo].forEach((f) => { if (f && fs.existsSync(f)) fs.unlinkSync(f); });
+      try { fs.rmSync(framesDir, { recursive: true, force: true }); } catch (_) {}
+      try { fs.unlinkSync(outputPath); } catch (_) {}
     }
   },
 };
+

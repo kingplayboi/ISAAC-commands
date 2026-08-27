@@ -1,99 +1,65 @@
-/**
- * commands/toword.js
- * --------------------
- * Converts a replied text/PDF document into a .docx Word document.
- * Requires: npm install docx pdf-parse
- *
- * Usage:
- *   Reply to a .txt or .pdf document with .toword
- */
-
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-function getRepliedDocument(msg) {
-  const m = msg.message;
-  if (m?.documentMessage) return { message: m, key: msg.key, mimetype: m.documentMessage.mimetype };
-
-  const ctx = m?.extendedTextMessage?.contextInfo;
-  const quoted = ctx?.quotedMessage;
-  if (quoted?.documentMessage) {
-    return {
-      message: quoted,
-      key: {
-        remoteJid: msg.key.remoteJid,
-        id: ctx.stanzaId,
-        fromMe: false,
-        participant: ctx.participant,
-      },
-      mimetype: quoted.documentMessage.mimetype,
-    };
-  }
-  return null;
-}
+const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType } = require('docx');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 module.exports = {
   name: 'toword',
-  description: 'Converts a replied text/PDF file into a Word document. Reply to a document with .toword',
-  async execute(sock, msg) {
+  aliases: ['word', 'makedoc', 'todocx', 'img2word', 'text2word'],
+  description: 'Convert a quoted image or text to a Word (.docx) file. Usage: .toword <text>, or reply to an image with .toword',
+  async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
-    const target = getRepliedDocument(msg);
+    const ctx = msg.message?.extendedTextMessage?.contextInfo;
+    const quoted = ctx?.quotedMessage;
+    const quotedText = quoted?.conversation || quoted?.extendedTextMessage?.text || '';
+    const inputText = args.join(' ').trim() || quotedText;
+    const imageMessage = quoted?.imageMessage || null;
 
-    if (!target) {
-      return sock.sendMessage(
-        jid,
-        { text: '❌ Reply to a .txt or .pdf document with .toword to convert it.' },
-        { quoted: msg }
-      );
+    if (!imageMessage && !inputText) {
+      return sock.sendMessage(jid, {
+        text: '📝 *Usage:*\n• Reply to an image: *.toword*\n• Convert text: *.toword Your text here*'
+      }, { quoted: msg });
     }
 
-    let tmpOut;
     try {
-      const { Document, Packer, Paragraph } = require('docx');
-      const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+      await sock.sendMessage(jid, { text: '⏳ Creating Word document...' }, { quoted: msg });
+      let children = [];
 
-      const buffer = await downloadMediaMessage(
-        { key: target.key, message: target.message },
-        'buffer',
-        {},
-        { reuploadRequest: sock.updateMediaMessage }
-      );
-
-      let text;
-      if (target.mimetype === 'application/pdf') {
-        const pdfParse = require('pdf-parse');
-        const parsed = await pdfParse(buffer);
-        text = parsed.text;
+      if (imageMessage) {
+        const buffer = await downloadMediaMessage(
+          { message: quoted, key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant } },
+          'buffer',
+          {}
+        );
+        const type = (imageMessage.mimetype || '').includes('png') ? 'png' : 'jpg';
+        children.push(
+          new Paragraph({
+            children: [new ImageRun({ data: buffer, transformation: { width: 500, height: 350 }, type })],
+            alignment: AlignmentType.CENTER,
+          })
+        );
       } else {
-        text = buffer.toString('utf8');
+        for (const line of inputText.split('\n')) {
+          children.push(
+            line.trim()
+              ? new Paragraph({ children: [new TextRun({ text: line.trim(), size: 24, font: 'Calibri' })], spacing: { after: 120 } })
+              : new Paragraph({})
+          );
+        }
       }
 
-      const paragraphs = text
-        .split(/\r?\n/)
-        .map((line) => new Paragraph(line));
-
-      const doc = new Document({
-        sections: [{ children: paragraphs }],
-      });
-
+      const doc = new Document({ sections: [{ properties: {}, children }] });
       const docBuffer = await Packer.toBuffer(doc);
-      tmpOut = path.join(os.tmpdir(), `toword_${Date.now()}.docx`);
-      fs.writeFileSync(tmpOut, docBuffer);
 
-      await sock.sendMessage(
-        jid,
-        {
-          document: fs.readFileSync(tmpOut),
-          mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          fileName: 'converted.docx',
-        },
-        { quoted: msg }
-      );
-    } catch (e) {
-      await sock.sendMessage(jid, { text: `❌ Error converting to Word: ${e.message}` }, { quoted: msg });
-    } finally {
-      if (tmpOut && fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);
+      await sock.sendMessage(jid, {
+        document: docBuffer,
+        mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        fileName: `document_${Date.now()}.docx`,
+        caption: '✅ *Word document created successfully!*',
+      }, { quoted: msg });
+
+    } catch (err) {
+      console.error('[TOWORD ERROR]', err.message);
+      await sock.sendMessage(jid, { text: '❌ Failed to create Word document. Try again.' }, { quoted: msg });
     }
   },
 };
+

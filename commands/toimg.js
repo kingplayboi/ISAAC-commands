@@ -1,75 +1,61 @@
-/**
- * commands/toimg.js
- * -------------------
- * Converts a sticker (webp) to a regular image (png).
- *
- * Usage:
- *   Reply to a sticker with .toimg
- */
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
-const { promisify } = require('util');
-const execFileAsync = promisify(execFile);
-
-function getRepliedSticker(msg) {
-  const m = msg.message;
-  if (m?.stickerMessage) return { message: m, key: msg.key };
-
-  const ctx = m?.extendedTextMessage?.contextInfo;
-  const quoted = ctx?.quotedMessage;
-  if (quoted?.stickerMessage) {
-    return {
-      message: quoted,
-      key: {
-        remoteJid: msg.key.remoteJid,
-        id: ctx.stanzaId,
-        fromMe: false,
-        participant: ctx.participant,
-      },
-    };
-  }
-  return null;
-}
+const ffmpegPath = require('ffmpeg-static');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 module.exports = {
   name: 'toimg',
-  description: 'Converts a sticker to an image. Reply to a sticker with .toimg',
+  aliases: ['photo', 'toimage'],
+  description: 'Convert a sticker to an image. Reply to a sticker with .toimg',
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
-    const target = getRepliedSticker(msg);
+    const ctx = msg.message?.extendedTextMessage?.contextInfo;
+    const quoted = ctx?.quotedMessage;
 
-    if (!target) {
-      return sock.sendMessage(
-        jid,
-        { text: '❌ Reply to a sticker with .toimg to convert it to an image.' },
-        { quoted: msg }
-      );
+    if (!quoted?.stickerMessage) {
+      return sock.sendMessage(jid, { text: 'Reply to a sticker with *.toimg*' }, { quoted: msg });
     }
 
-    let tmpWebp, tmpPng;
+    const mimetype = quoted.stickerMessage.mimetype || '';
+    if (!/webp/.test(mimetype)) {
+      return sock.sendMessage(jid, { text: 'Tag a sticker to convert to photo' }, { quoted: msg });
+    }
+
+    const id = Date.now();
+    const inputPath = path.join(os.tmpdir(), `toimg_${id}.webp`);
+    const outputPath = path.join(os.tmpdir(), `toimg_${id}.png`);
+
     try {
-      const { downloadMediaMessage } = require('@whiskeysockets/baileys');
       const buffer = await downloadMediaMessage(
-        { key: target.key, message: target.message },
+        { message: quoted, key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant } },
         'buffer',
-        {},
-        { reuploadRequest: sock.updateMediaMessage }
+        {}
       );
+      fs.writeFileSync(inputPath, buffer);
 
-      tmpWebp = path.join(os.tmpdir(), `toimg_${Date.now()}.webp`);
-      tmpPng = path.join(os.tmpdir(), `toimg_${Date.now()}.png`);
-      fs.writeFileSync(tmpWebp, buffer);
+      // execFile (not exec) — no shell string interpolation of file paths.
+      await new Promise((resolve, reject) => {
+        execFile(ffmpegPath, ['-y', '-i', inputPath, outputPath], (err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
 
-      await execFileAsync('ffmpeg', ['-y', '-i', tmpWebp, tmpPng]);
+      if (!fs.existsSync(outputPath)) throw new Error('Output file not created');
 
-      await sock.sendMessage(jid, { image: fs.readFileSync(tmpPng) }, { quoted: msg });
-    } catch (e) {
-      await sock.sendMessage(jid, { text: `❌ Error converting sticker: ${e.message}` }, { quoted: msg });
+      const outBuffer = fs.readFileSync(outputPath);
+      await sock.sendMessage(jid, { image: outBuffer, caption: '✅ *Converted successfully!*' }, { quoted: msg });
+
+    } catch (err) {
+      console.error('[TOIMG ERROR]', err.message);
+      await sock.sendMessage(jid, { text: '❌ Conversion failed.' }, { quoted: msg });
     } finally {
-      [tmpWebp, tmpPng].forEach((f) => { if (f && fs.existsSync(f)) fs.unlinkSync(f); });
+      for (const p of [inputPath, outputPath]) {
+        if (fs.existsSync(p)) { try { fs.unlinkSync(p); } catch (_) {} }
+      }
     }
   },
 };
+
