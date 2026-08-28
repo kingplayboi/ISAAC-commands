@@ -1,4 +1,3 @@
-// The sequence of emojis to cycle through before responding.
 const REACTION_SEQUENCE = ['🤕', '😂', '👀', '🔥', '😈', '🌚', '💀', '🖕', '⚡', '😡', '🤬', '🐛', '✅'];
 const REACTION_DELAY_MS = 80; // fast cycle
 
@@ -14,12 +13,9 @@ async function react(sock, msg, emoji) {
 
 module.exports = {
   name: 'ping',
+  aliases: ['speed'],
   description: 'Shows bot response speed.',
   async execute(sock, msg, args) {
-    // WhatsApp is migrating some chats to @lid identifiers. Sending
-    // messages directly to a @lid JID can get stuck in a "PENDING"
-    // state and never deliver. If we have the phone-number-based JID
-    // available, prefer that for sending.
     const rawJid = msg.key.remoteJid;
     const jid = rawJid.endsWith('@lid') && msg.key.senderPn
       ? msg.key.senderPn
@@ -27,23 +23,16 @@ module.exports = {
 
     const start = process.hrtime.bigint();
 
-    // Fire off the reaction sequence without blocking the response.
     const reactionSequence = (async () => {
       for (const emoji of REACTION_SEQUENCE) {
         await react(sock, msg, emoji);
         await delay(REACTION_DELAY_MS);
       }
-      // Clear the reaction once the sequence finishes.
       await react(sock, msg, '');
     })();
 
-    // We resolve @lid chats to a real phone-number JID above when
-    // possible, so editing may actually work there too now. Attempt
-    // it everywhere and rely on the fallback below if it fails.
-    const canEdit = true;
-
-    // Send placeholder message
-    let sent;
+     const canEdit = true;
+ let sent;
     try {
       sent = await sock.sendMessage(
         jid,
@@ -73,7 +62,6 @@ module.exports = {
 ╰────────────────╯`;
 
     if (canEdit) {
-      // Try editing the placeholder in place.
       try {
         await sock.sendMessage(jid, {
           text,
@@ -84,7 +72,6 @@ module.exports = {
         await sock.sendMessage(jid, { text }, { quoted: msg });
       }
     } else {
-      // @lid chats: skip edit, just send a fresh message.
       try {
         await sock.sendMessage(jid, { text }, { quoted: msg });
       } catch (err) {
@@ -92,7 +79,6 @@ module.exports = {
       }
     }
 
-    // Make sure the reaction sequence has finished before returning.
     await reactionSequence;
   },
 };
