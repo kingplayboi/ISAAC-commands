@@ -1,12 +1,12 @@
 module.exports = {
   name: 'promote',
-  aliases: ['crown'],
+  aliases: ['crown', 'p'],
   description: 'Promotes a mentioned member to group admin (admin only).',
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
 
     if (!jid.endsWith('@g.us')) {
-      await sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *This command only works in groups.*' }, { quoted: msg });
       return;
     }
 
@@ -17,7 +17,7 @@ module.exports = {
     if (!targetJid) {
       await sock.sendMessage(
         jid,
-        { text: '❌ Mention the person to promote, or reply to one of their messages with .promote.' },
+        { text: '❌ *Mention or tag someone with the command.*' },
         { quoted: msg }
       );
       return;
@@ -28,18 +28,18 @@ module.exports = {
     const { isBotAdmin, isSenderAdmin } = require('../utils/isAdmin');
 
     if (!isSenderAdmin(metadata, senderJid)) {
-      await sock.sendMessage(jid, { text: '❌ Only group admins can use this command.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *Commands reserved for group admins.*' }, { quoted: msg });
       return;
     }
     if (!isBotAdmin(sock, metadata)) {
-      await sock.sendMessage(jid, { text: '❌ I need to be a group admin to promote members.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *I need to be an admin, crown me.*' }, { quoted: msg });
       return;
     }
 
     await sock.groupParticipantsUpdate(jid, [targetJid], 'promote');
     await sock.sendMessage(
       jid,
-      { text: `⬆️ Promoted @${targetJid.split('@')[0]} to admin👑.`, mentions: [targetJid] },
+      { text: `⬆️ *Promoted @${targetJid.split('@')[0]} to admin👑.*`, mentions: [targetJid] },
       { quoted: msg }
     );
   },

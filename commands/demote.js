@@ -1,11 +1,12 @@
 module.exports = {
   name: 'demote',
+  aliases: ['d'],
   description: 'Demotes a mentioned admin back to a regular member (admin only).',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
 
     if (!jid.endsWith('@g.us')) {
-      await sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *This command only works in groups.*' }, { quoted: msg });
       return;
     }
 
@@ -16,7 +17,7 @@ module.exports = {
     if (!targetJid) {
       await sock.sendMessage(
         jid,
-        { text: '❌ Mention the person to demote, or reply to one of their messages with !demote.' },
+        { text: '❌ *Mention or tag someone with the command.*' },
         { quoted: msg }
       );
       return;
@@ -29,18 +30,13 @@ const metadata = await sock.groupMetadata(jid);
     const isSenderAdmin = checkSenderAdmin(metadata, senderJid);
     const isBotAdmin = checkBotAdmin(sock, metadata);
 
-    if (!isBotAdmin) {
-      console.log('[DEBUG isAdmin] sock.user:', JSON.stringify(sock.user));
-      console.log('[DEBUG isAdmin] participants:', JSON.stringify(metadata.participants, null, 2));
-    }
-
-    if (!isSenderAdmin) {      await sock.sendMessage(jid, { text: '❌ Only group admins can use this command.' }, { quoted: msg });
+    if (!isSenderAdmin) {      await sock.sendMessage(jid, { text: '❌ *Command reserved for group admins.*' }, { quoted: msg });
       return;
     }
     if (!isBotAdmin) {
       await sock.sendMessage(
         jid,
-        { text: '❌ I need to be a group admin to demote members.' },
+        { text: '❌ *I need to be an admin, crown me.*' },
         { quoted: msg }
       );
       return;
@@ -49,8 +45,9 @@ const metadata = await sock.groupMetadata(jid);
     await sock.groupParticipantsUpdate(jid, [targetJid], 'demote');
     await sock.sendMessage(
       jid,
-      { text: `⬇️ Demoted @${targetJid.split('@')[0]} to member.`, mentions: [targetJid] },
+      { text: `⬇️ *Demoted @${targetJid.split('@')[0]} to member.*`, mentions: [targetJid] },
       { quoted: msg }
     );
   },
 };
+
