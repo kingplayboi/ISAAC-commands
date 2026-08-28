@@ -7,7 +7,7 @@ module.exports = {
     const jid = msg.key.remoteJid;
 
     if (!jid.endsWith('@g.us')) {
-      await sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *This command only works in groups.*' }, { quoted: msg });
       return;
     }
 
@@ -29,7 +29,7 @@ module.exports = {
     } else {
       await sock.sendMessage(
         jid,
-        { text: '❌ Who should I add, provide a number or reply to their message.\nUsage: .add 254754574642\nOr: reply to their message with .add' },
+        { text: '❌ *Who should I add, provide a number or reply to their message.*\nUsage: .add 254754574642\nOr: reply to their message with .add' },
         { quoted: msg }
       );
       return;
@@ -39,11 +39,11 @@ module.exports = {
     const senderJid = msg.key.participant || msg.key.remoteJid;
 
     if (!isSenderAdmin(metadata, senderJid)) {
-      await sock.sendMessage(jid, { text: '❌ Only group admins can use this command.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *Only group admins can use this command.*' }, { quoted: msg });
       return;
     }
     if (!isBotAdmin(sock, metadata)) {
-      await sock.sendMessage(jid, { text: '❌ I need to be a group admin to add members.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *I need to be a group admin to add members.*' }, { quoted: msg });
       return;
     }
 
@@ -53,7 +53,7 @@ module.exports = {
     if (alreadyMember) {
       await sock.sendMessage(
         jid,
-        { text: `ℹ️ @${targetJid.split('@')[0]} is already a member.`, mentions: [targetJid] },
+        { text: `ℹ️ *@${targetJid.split('@')[0]} is already a member.*`, mentions: [targetJid] },
         { quoted: msg }
       );
       return;
@@ -66,7 +66,7 @@ module.exports = {
       if (participantResult?.status === '409') {
         await sock.sendMessage(
           jid,
-          { text: `ℹ️ @${targetJid.split('@')[0]} is already a member.`, mentions: [targetJid] },
+          { text: `ℹ️ *@${targetJid.split('@')[0]} is already a member.*`, mentions: [targetJid] },
           { quoted: msg }
         );
         return;
@@ -79,14 +79,14 @@ module.exports = {
 
       await sock.sendMessage(
         jid,
-        { text: `✅ Added @${targetJid.split('@')[0]} to the group.`, mentions: [targetJid] },
+        { text: `✅ *Added @${targetJid.split('@')[0]} to the group.*`, mentions: [targetJid] },
         { quoted: msg }
       );
     } catch (error) {
       try {
         await sendInviteFallback(sock, jid, targetJid, metadata, msg);
       } catch (fallbackError) {
-        await sock.sendMessage(jid, { text: `❌ Failed to add member: ${error.message}` }, { quoted: msg });
+        await sock.sendMessage(jid, { text: `❌ *Failed to add member: ${error.message}*` }, { quoted: msg });
       }
     }
   },
@@ -149,7 +149,7 @@ Hope to see you there! 🎉`;
     await sock.sendMessage(
       groupJid,
       {
-        text: `📨 Couldn't add @${targetJid.split('@')[0]} directly, so I've sent them a private invitation.`,
+        text: `📨 *Couldn't add @${targetJid.split('@')[0]} directly, so I've sent them a private invitation.*`,
         mentions: [targetJid]
       },
       { quoted: msg }
@@ -159,7 +159,7 @@ Hope to see you there! 🎉`;
     await sock.sendMessage(
       groupJid,
       {
-        text: `❌ Couldn't add @${targetJid.split('@')[0]} directly, and couldn't send an invite either:\n${e.message}`,
+        text: `❌ *Couldn't add @${targetJid.split('@')[0]} directly, and couldn't send an invite either:*\n${e.message}`,
         mentions: [targetJid]
       },
       { quoted: msg }

@@ -7,7 +7,7 @@ module.exports = {
     const jid = msg.key.remoteJid;
 
     if (!jid.endsWith('@g.us')) {
-      await sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *This command only works in groups.*' }, { quoted: msg });
       return;
     }
 
@@ -18,7 +18,7 @@ module.exports = {
     if (!targetJid) {
       await sock.sendMessage(
         jid,
-        { text: '❌ Who should I warn, mention or tag someone with the command.' },
+        { text: '❌ *Who should I warn, mention or tag someone with the command.*' },
         { quoted: msg }
       );
       return;
@@ -29,7 +29,7 @@ module.exports = {
     const { isBotAdmin, isSenderAdmin } = require('../utils/isAdmin');
 
     if (!isSenderAdmin(metadata, senderJid)) {
-      await sock.sendMessage(jid, { text: '❌ Only group admins can use this command.' }, { quoted: msg });
+      await sock.sendMessage(jid, { text: '❌ *Only group admins can use this command.*' }, { quoted: msg });
       return;
     }
 
@@ -44,7 +44,7 @@ module.exports = {
         await sock.sendMessage(
           jid,
           {
-            text: `🚫 @${targetJid.split('@')[0]} reached 3 warnings and has been removed.`,
+            text: `🚫 *@${targetJid.split('@')[0]} reached 3 warnings and has been removed.*`,
             mentions: [targetJid],
           },
           { quoted: msg }
@@ -53,7 +53,7 @@ module.exports = {
         await sock.sendMessage(
           jid,
           {
-            text: `⚠️ @${targetJid.split('@')[0]} has reached 3 warnings, but I need admin rights to remove them.`,
+            text: `⚠️ *@${targetJid.split('@')[0]} has reached 3 warnings, but I need admin rights to remove them.*`,
             mentions: [targetJid],
           },
           { quoted: msg }
@@ -66,9 +66,9 @@ module.exports = {
       jid,
       {
         text:
-          `⚠️ @${targetJid.split('@')[0]} has been warned (${count}/3).\n` +
-          `Reason: ${reason}\n` +
-          `${remaining} warning(s) until removal.`,
+          `⚠️ *@${targetJid.split('@')[0]} has been warned (${count}/3).*\n` +
+          `*Reason:* ${reason}\n` +
+          `*${remaining} warning(s) until removal.*`,
         mentions: [targetJid],
       },
       { quoted: msg }
