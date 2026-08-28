@@ -18,7 +18,7 @@ module.exports = {
     if (!targetJid) {
       await sock.sendMessage(
         jid,
-        { text: '❌ Mention the person to warn, or reply to one of their messages with .warn.' },
+        { text: '❌ Who should I warn, mention or tag someone with the command.' },
         { quoted: msg }
       );
       return;

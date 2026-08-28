@@ -17,7 +17,7 @@ module.exports = {
 
         if (!target) {
             return sock.sendMessage(jid, {
-                text: '❌ Mention a user or reply to their message.\n\nUsage: *.unban @user* or reply to their message with *.unban*',
+                text: '❌ Who should I unban, mention or tag someone with the command.\n\nUsage: *.unban @user* or reply to their message with *.unban*',
             }, { quoted: msg });
         }
 

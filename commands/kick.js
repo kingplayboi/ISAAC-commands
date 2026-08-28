@@ -58,7 +58,7 @@ module.exports = {
     if (!targets.length) {
       return await sock.sendMessage(
         jid,
-        { text: '*Who should i remove !?*' },
+        { text: '*Who should I remove !?, give me a target*' },
         { quoted: msg }
       );
     }

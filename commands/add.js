@@ -11,10 +11,6 @@ module.exports = {
       return;
     }
 
-    // Prefer a replied-to message's sender; fall back to a typed number.
-    // For the reply case, prefer the phone-number JID (participantAlt /
-    // participantPn) over the raw @lid participant field, since the
-    // add action needs a phone-number JID.
     const ctx = msg.message?.extendedTextMessage?.contextInfo;
     const repliedLid = ctx?.participant;
     const repliedPn = ctx?.participantAlt || ctx?.participantPn;
@@ -26,8 +22,6 @@ module.exports = {
       targetJid = repliedPn;
       targetLid = repliedLid;
     } else if (repliedLid) {
-      // No phone-number counterpart available — fall back to the LID and
-      // hope for the best; this is the case most likely to still fail.
       targetJid = repliedLid;
       targetLid = repliedLid;
     } else if (number) {
@@ -35,7 +29,7 @@ module.exports = {
     } else {
       await sock.sendMessage(
         jid,
-        { text: '❌ Provide a number or reply to their message.\nUsage: .add 254754574642\nOr: reply to their message with .add' },
+        { text: '❌ Who should I add, provide a number or reply to their message.\nUsage: .add 254754574642\nOr: reply to their message with .add' },
         { quoted: msg }
       );
       return;
@@ -53,9 +47,6 @@ module.exports = {
       return;
     }
 
-    // Check membership against BOTH the phone-number JID and the LID
-    // form, since group metadata participants may be keyed either way
-    // depending on Baileys/WhatsApp's current addressing mode.
     const alreadyMember = metadata.participants.some(
       (p) => p.id === targetJid || (targetLid && p.id === targetLid) || p.phoneNumber === targetJid
     );
@@ -71,10 +62,6 @@ module.exports = {
     try {
       const result = await sock.groupParticipantsUpdate(jid, [targetJid], 'add');
 
-      // groupParticipantsUpdate resolves with a per-participant status
-      // array rather than always throwing — WhatsApp uses status 409 for
-      // "already a member" here, so catch that case even if our
-      // pre-check above missed it due to a JID form mismatch.
       const participantResult = result?.[0];
       if (participantResult?.status === '409') {
         await sock.sendMessage(
@@ -86,9 +73,6 @@ module.exports = {
       }
 
       if (participantResult && participantResult.status !== '200') {
-        // Couldn't add directly (commonly status 403 — their privacy
-        // settings block being added by non-contacts). Fall back to
-        // DMing them an invite link instead.
         await sendInviteFallback(sock, jid, targetJid, metadata, msg);
         return;
       }
@@ -99,11 +83,6 @@ module.exports = {
         { quoted: msg }
       );
     } catch (error) {
-      // A bad-request here after a reply-based add most often means the
-      // LID we had to fall back to wasn't accepted — not necessarily a
-      // real failure to add. Try the invite-link fallback rather than
-      // just erroring out, since the end goal (get them into the group)
-      // can still be achieved this way.
       try {
         await sendInviteFallback(sock, jid, targetJid, metadata, msg);
       } catch (fallbackError) {

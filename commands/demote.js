@@ -17,7 +17,7 @@ module.exports = {
     if (!targetJid) {
       await sock.sendMessage(
         jid,
-        { text: '❌ *Mention or tag someone with the command.*' },
+        { text: '❌ *Who should I demote,mention or tag someone with the command.*' },
         { quoted: msg }
       );
       return;
