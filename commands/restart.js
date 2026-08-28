@@ -2,7 +2,7 @@ const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
     name: 'restart',
-    aliases: ['reboot'],
+    aliases: ['reboot', 'boot'],
     description: 'Restarts the bot process (owner only).',
     async execute(sock, msg) {
         const jid = msg.key.remoteJid;
@@ -10,7 +10,7 @@ module.exports = {
             return sock.sendMessage(jid, { text: '*❌ Are you the owner ?.*' }, { quoted: msg });
         }
 
-        await sock.sendMessage(jid, { text: '*🔄 Restarting...*' }, { quoted: msg });
+        await sock.sendMessage(jid, { text: '*🔄 Restarting... unlike your ex, I\'ll be back.*' }, { quoted: msg });
         setTimeout(() => process.exit(0), 1000);
     },
 };
