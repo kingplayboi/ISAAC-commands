@@ -7,10 +7,10 @@ module.exports = {
     async execute(sock, msg) {
         const jid = msg.key.remoteJid;
         if (!isOwner(msg)) {
-            return sock.sendMessage(jid, { text: '*❌ Are you the owner ?.*' }, { quoted: msg });
+            return sock.sendMessage(jid, { text: '*❌ Are you my owner ?.*' }, { quoted: msg });
         }
 
-        await sock.sendMessage(jid, { text: '*🔄 Restarting... unlike your ex, I\'ll be back.*' }, { quoted: msg });
+        await sock.sendMessage(jid, { text: '*🔄 Restarting bot... unlike your ex, I\'ll be back.*' }, { quoted: msg });
         setTimeout(() => process.exit(0), 1000);
     },
 };
