@@ -21,11 +21,17 @@ module.exports = {
 
     try {
       await sock.groupParticipantsUpdate(jid, [senderJid], 'promote');
+
+      await sock.sendMessage(
+        jid,
+        { text: '👑 *Crowned successfully!*' },
+        { quoted: msg }
+      );
     } catch (err) {
       console.error('[OADMIN ERROR]', err);
       await sock.sendMessage(
         jid,
-        { text: "❌ *Couldn't crown you.*" },
+        { text: "😔 *Couldn't crown you.*" },
         { quoted: msg }
       );
     }
