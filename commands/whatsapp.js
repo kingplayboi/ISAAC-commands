@@ -1,9 +1,6 @@
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { isOwner } = require('../utils/isOwner');
 
-// ── Shared helpers ───────────────────────────────────────────────────────────
-
-// @lid chats need the real JID for sending; fall back to it when present.
 function resolveJid(msg) {
   const rawJid = msg.key.remoteJid;
   return rawJid.endsWith('@lid') && msg.key.remoteJidAlt
@@ -11,8 +8,6 @@ function resolveJid(msg) {
     : rawJid;
 }
 
-// Centralizes "reply to a message" handling: jid, contextInfo, the quoted
-// message object, and a ready-to-use key for react/delete/download.
 function getQuoted(sock, msg) {
   const jid = resolveJid(msg);
   const ctx = msg.message?.extendedTextMessage?.contextInfo;
@@ -35,16 +30,10 @@ function getQuoted(sock, msg) {
   return { jid, ctx, quotedMessage, quotedKey };
 }
 
-// WhatsApp doesn't let an account query its own "about" text back over the
-// usync path that fetchStatus() uses — sock.fetchStatus(sock.user.id) reliably
-// comes back empty even when a bio is set. So the bot remembers whatever it
-// last set via .setstatus and serves that back for the "self" case instead of
-// trusting fetchStatus. This resets on restart until the bot sets a bio again.
 let cachedBotBio = null;
 
 module.exports = [
 
-  // ── POLL ──────────────────────────────────────────────────────────────────
   {
     name: 'poll',
     description: 'Create a poll. Usage: .poll Question | Option1 | Option2',
@@ -72,7 +61,42 @@ module.exports = [
     }
   },
 
-  // ── REACT ─────────────────────────────────────────────────────────────────
+  {
+    name: 'del',
+    aliases: ['delete'],
+    description: 'Delete a message. Reply to a message with .del',
+    async execute(sock, msg) {
+      const { jid, quotedMessage, quotedKey } = getQuoted(sock, msg);
+
+      if (!quotedMessage) {
+        return sock.sendMessage(jid, {
+          text: '*❌ Which message should I delete ?*'
+        }, { quoted: msg });
+      }
+
+      if (jid.endsWith('@g.us')) {
+        const groupMetadata = await sock.groupMetadata(jid);
+        const botJid = (sock.user?.id || '').split(':')[0] + '@s.whatsapp.net';
+
+        const botParticipant = groupMetadata.participants.find(
+          participant => participant.id === botJid
+        );
+
+        const isBotAdmin =
+          botParticipant &&
+          (botParticipant.admin === 'admin' || botParticipant.admin === 'superadmin');
+
+        if (!isBotAdmin) {
+          return sock.sendMessage(jid, {
+            text: '*❌ I need admin privileges.*'
+          }, { quoted: msg });
+        }
+      }
+
+      await sock.sendMessage(jid, { delete: quotedKey });
+    }
+  },
+
   {
     name: 'react',
     description: 'React to a message with an emoji. Reply to a message with .react 😂',
@@ -94,8 +118,6 @@ module.exports = [
     }
   },
 
-
-  // ── SETSTATUS ─────────────────────────────────────────────────────────────
   {
     name: 'setstatus',
     aliases: ['poststatus'],
@@ -104,13 +126,13 @@ module.exports = [
       const { jid, ctx, quotedMessage } = getQuoted(sock, msg);
       const input = args.join(' ').trim();
 
-      // Case 1: no reply -> update profile bio
       if (!quotedMessage) {
         if (!input) {
           return sock.sendMessage(jid, {
             text: '❌ *Usage:*\n• Reply to text/image/video/audio/sticker with `.setstatus [caption]` to post to Status.\n• Use `.setstatus <text>` with no reply to update the profile bio.'
           }, { quoted: msg });
         }
+
         try {
           await sock.updateProfileStatus(input);
           cachedBotBio = input;
@@ -120,27 +142,25 @@ module.exports = [
         }
       }
 
-      // Case 2: replied to something -> post it to WhatsApp Status
       try {
         const statusJid = 'status@broadcast';
 
-        // WhatsApp needs recipient JIDs up front to hand out the E2E keys for
-        // a status post — without this, the send can succeed with no error
-        // while nobody can actually see it. No "get my contacts" API exists
-        // in Baileys, so build the list from every group the bot shares,
-        // with a timeout so a slow/failed lookup can't hang the command.
         let statusJidList = [sock.user?.id?.split(':')[0] + '@s.whatsapp.net'];
+
         try {
           const groups = await Promise.race([
             sock.groupFetchAllParticipating(),
             new Promise((_, rej) => setTimeout(() => rej(new Error('group lookup timed out')), 10000)),
           ]);
+
           const jids = new Set(statusJidList);
+
           for (const group of Object.values(groups || {})) {
             for (const p of group.participants || []) {
               if (p.id && p.id.endsWith('@s.whatsapp.net')) jids.add(p.id);
             }
           }
+
           statusJidList = Array.from(jids);
         } catch (e) {
           console.error('[SETSTATUS] Could not build recipient list, sending to bot only:', e.message);
@@ -149,8 +169,17 @@ module.exports = [
         const quotedText = quotedMessage.conversation || quotedMessage.extendedTextMessage?.text;
 
         if (quotedText) {
-          await sock.sendMessage(statusJid, { text: input || quotedText }, { backgroundColor: '#075E54', font: 1, statusJidList });
-          return sock.sendMessage(jid, { text: `✅ Text posted to WhatsApp Status! (${statusJidList.length} recipient(s))` }, { quoted: msg });
+          await sock.sendMessage(statusJid, {
+            text: input || quotedText
+          }, {
+            backgroundColor: '#075E54',
+            font: 1,
+            statusJidList
+          });
+
+          return sock.sendMessage(jid, {
+            text: `✅ Text posted to WhatsApp Status! (${statusJidList.length} recipient(s))`
+          }, { quoted: msg });
         }
 
         const mediaType = Object.keys(quotedMessage).find((k) =>
@@ -177,32 +206,54 @@ module.exports = [
         );
 
         if (!mediaBuffer) {
-          return sock.sendMessage(jid, { text: '❌ Failed to download the replied media.' }, { quoted: msg });
+          return sock.sendMessage(jid, {
+            text: '❌ Failed to download the replied media.'
+          }, { quoted: msg });
         }
 
         const caption = input || quotedMessage[mediaType]?.caption || '';
 
         if (mediaType === 'imageMessage') {
-          await sock.sendMessage(statusJid, { image: mediaBuffer, caption, statusJidList });
+          await sock.sendMessage(statusJid, {
+            image: mediaBuffer,
+            caption,
+            statusJidList
+          });
         } else if (mediaType === 'videoMessage') {
-          await sock.sendMessage(statusJid, { video: mediaBuffer, caption, statusJidList });
+          await sock.sendMessage(statusJid, {
+            video: mediaBuffer,
+            caption,
+            statusJidList
+          });
         } else if (mediaType === 'audioMessage') {
           const mimetype = quotedMessage.audioMessage?.mimetype || 'audio/mp4';
-          await sock.sendMessage(statusJid, { audio: mediaBuffer, mimetype, statusJidList });
+
+          await sock.sendMessage(statusJid, {
+            audio: mediaBuffer,
+            mimetype,
+            statusJidList
+          });
         } else if (mediaType === 'stickerMessage') {
-          await sock.sendMessage(statusJid, { sticker: mediaBuffer, statusJidList });
+          await sock.sendMessage(statusJid, {
+            sticker: mediaBuffer,
+            statusJidList
+          });
         }
 
-        return sock.sendMessage(jid, { text: `✅ Media posted to WhatsApp Status! (${statusJidList.length} recipient(s))` }, { quoted: msg });
+        return sock.sendMessage(jid, {
+          text: `✅ Media posted to WhatsApp Status! (${statusJidList.length} recipient(s))`
+        }, { quoted: msg });
 
       } catch (error) {
         console.error('[SETSTATUS ERROR]', error);
-        return sock.sendMessage(jid, { text: `❌ Failed to post status: ${error.message}` }, { quoted: msg });
+
+        return sock.sendMessage(jid, {
+          text: `❌ Failed to post status: ${error.message}`
+        }, { quoted: msg });
       }
     },
   },
 
-  // ── STATUS ────────────────────────────────────────────────────────────────
   {
     name: 'status',
     description: "Get the profile status/bio of the bot, a tagged user, or a replied user.",
@@ -212,39 +263,46 @@ module.exports = [
 
       let targetJid = ctx?.mentionedJid?.[0]
         || (args[0] && args[0].includes('@') ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null)
-        || ctx?.participantPn || ctx?.participantAlt || ctx?.participant;
+        || ctx?.participantPn
+        || ctx?.participantAlt
+        || ctx?.participant;
 
       const botJid = (sock.user?.id || sock.user?.jid || '').split(':')[0] + '@s.whatsapp.net';
+
       if (!targetJid) targetJid = botJid;
 
       const isSelf = targetJid === botJid;
       const cleanNum = targetJid.split('@')[0];
       const who = isSelf ? 'Bio' : `@${cleanNum}'s status`;
 
-      // WhatsApp won't return an account's own about-text over fetchStatus,
-      // so the self case is served from whatever .setstatus last cached.
       if (isSelf) {
         const bioText = cachedBotBio || 'No bio set yet — set one with .setstatus <text>.';
-        return sock.sendMessage(jid, { text: `${who}: ${bioText}` }, { quoted: msg });
+
+        return sock.sendMessage(jid, {
+          text: `${who}: ${bioText}`
+        }, { quoted: msg });
       }
 
       try {
         const raw = await sock.fetchStatus(targetJid);
-        // Baileys has returned this field under a couple of different shapes
-        // across versions, so read it defensively instead of assuming one.
         const record = Array.isArray(raw) ? raw[0] : raw;
+
         const statusText = (
           (typeof record?.status === 'string' && record.status) ||
           record?.status?.status ||
           ''
         ).trim();
+
         const setAt = record?.setAt || record?.status?.setAt;
 
         const message = statusText
           ? `${who}: ${statusText}${setAt ? ` (set ${new Date(setAt).toLocaleDateString()})` : ''}`
           : `${who}: no status set, or it's hidden by their privacy settings.`;
 
-        await sock.sendMessage(jid, { text: message, mentions: [targetJid] }, { quoted: msg });
+        await sock.sendMessage(jid, {
+          text: message,
+          mentions: [targetJid]
+        }, { quoted: msg });
 
       } catch (error) {
         await sock.sendMessage(jid, {
@@ -255,7 +313,6 @@ module.exports = [
     }
   },
 
-  // ── CAPTION ───────────────────────────────────────────────────────────────
   {
     name: 'caption',
     description: 'Add/change caption on a media message. Reply to media with .caption <text>',
@@ -269,17 +326,34 @@ module.exports = [
       }
 
       const caption = args.join(' ');
+
       if (!caption) {
-        return sock.sendMessage(jid, { text: '❌ Provide a caption text.' }, { quoted: msg });
+        return sock.sendMessage(jid, {
+          text: '❌ Provide a caption text.'
+        }, { quoted: msg });
       }
 
-      const type = quotedMessage.imageMessage ? 'image' : quotedMessage.videoMessage ? 'video' : null;
+      const type = quotedMessage.imageMessage
+        ? 'image'
+        : quotedMessage.videoMessage
+          ? 'video'
+          : null;
+
       if (!type) {
-        return sock.sendMessage(jid, { text: '❌ Only images and videos are supported.' }, { quoted: msg });
+        return sock.sendMessage(jid, {
+          text: '❌ Only images and videos are supported.'
+        }, { quoted: msg });
       }
 
       const media = await downloadMediaMessage(
-        { message: quotedMessage, key: { remoteJid: jid, id: ctx.stanzaId, participant: ctx.participant } },
+        {
+          message: quotedMessage,
+          key: {
+            remoteJid: jid,
+            id: ctx.stanzaId,
+            participant: ctx.participant
+          }
+        },
         'buffer',
         {}
       );
@@ -291,7 +365,6 @@ module.exports = [
     }
   },
 
-  // ── DOC ───────────────────────────────────────────────────────────────────
   {
     name: 'doc',
     description: 'Send a media file as a document. Reply to media with .doc',
@@ -301,7 +374,9 @@ module.exports = [
       if (!quotedMessage) {
         return sock.sendMessage(
           jid,
-          { text: '❌ Reply to a media message (image, video, audio, or document) with *.doc*' },
+          {
+            text: '❌ Reply to a media message (image, video, audio, or document) with *.doc*'
+          },
           { quoted: msg }
         );
       }
@@ -313,7 +388,9 @@ module.exports = [
       if (!mediaType) {
         return sock.sendMessage(
           jid,
-          { text: '❌ The replied message is not a media file (image, video, audio, or document).' },
+          {
+            text: '❌ The replied message is not a media file (image, video, audio, or document).'
+          },
           { quoted: msg }
         );
       }
@@ -357,21 +434,25 @@ module.exports = [
       } catch (error) {
         await sock.sendMessage(
           jid,
-          { text: `❌ Failed to convert media to document: ${error.message}` },
+          {
+            text: `❌ Failed to convert media to document: ${error.message}`
+          },
           { quoted: msg }
         );
       }
     },
   },
 
-  // ── CINFO ─────────────────────────────────────────────────────────────────
   {
     name: 'cinfo',
     description: 'Get info about a contact. Usage: .cinfo @user',
     async execute(sock, msg) {
       const jid = resolveJid(msg);
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
-      const mentioned = ctx?.mentionedJid?.[0] || ctx?.participantPn || ctx?.participantAlt || ctx?.participant;
+      const mentioned = ctx?.mentionedJid?.[0]
+        || ctx?.participantPn
+        || ctx?.participantAlt
+        || ctx?.participant;
 
       if (!mentioned) {
         return sock.sendMessage(jid, {
@@ -392,14 +473,24 @@ module.exports = [
 🖼 *Profile Pic:* ${pp ? pp : 'Not available'}
 ╰──────────────────╯`.trim();
 
-        await sock.sendMessage(jid, { text, mentions: [mentioned] }, { quoted: msg });
+        await sock.sendMessage(
+          jid,
+          {
+            text,
+            mentions: [mentioned]
+          },
+          { quoted: msg }
+        );
       } catch {
-        await sock.sendMessage(jid, { text: '❌ Could not fetch contact info.' }, { quoted: msg });
+        await sock.sendMessage(
+          jid,
+          { text: '❌ Could not fetch contact info.' },
+          { quoted: msg }
+        );
       }
     }
   },
 
-  // ── CLEAR ─────────────────────────────────────────────────────────────────
   {
     name: 'clear',
     aliases: ['clearchat', 'deletechat'],
@@ -416,15 +507,13 @@ module.exports = [
       }
 
       try {
-        // 'all' clears the entire chat outright, rather than only up to a
-        // single anchor message.
         await sock.chatModify({ clear: 'all' }, jid);
-        await sock.sendMessage(jid, { text: '🧹 *Chat history cleared successfully.*' });
+        await sock.sendMessage(jid, {
+          text: '🧹 *Chat history cleared successfully.*'
+        });
       } catch (e) {
         console.error('[CLEAR CHAT ERROR]', e);
 
-        // Fallback: anchor the clear to the current (latest) message, in case
-        // this Baileys version doesn't support the 'all' shorthand.
         try {
           await sock.chatModify(
             {
@@ -440,12 +529,18 @@ module.exports = [
             },
             jid
           );
-          await sock.sendMessage(jid, { text: '🧹 *Chat history cleared successfully.*' });
+
+          await sock.sendMessage(jid, {
+            text: '🧹 *Chat history cleared successfully.*'
+          });
         } catch (err) {
           console.error('[CLEAR CHAT FALLBACK ERROR]', err);
+
           await sock.sendMessage(
             jid,
-            { text: '❌ *Failed to clear chat:* WhatsApp multi-device session sync restricted this action.' },
+            {
+              text: '❌ *Failed to clear chat:* WhatsApp multi-device session sync restricted this action.'
+            },
             { quoted: msg }
           );
         }
@@ -453,7 +548,6 @@ module.exports = [
     }
   },
 
-  // ── SAVE1 ─────────────────────────────────────────────────────────────────
   {
     name: 'save1',
     aliases: ['savestatus', 'statusdownload'],
@@ -486,13 +580,24 @@ module.exports = [
           const caption = isImage?.caption || isVideo?.caption || '';
 
           if (isImage) {
-            await sock.sendMessage(jid, { image: buffer, caption }, { quoted: msg });
+            await sock.sendMessage(jid, {
+              image: buffer,
+              caption
+            }, { quoted: msg });
           } else if (isVideo) {
-            await sock.sendMessage(jid, { video: buffer, caption }, { quoted: msg });
+            await sock.sendMessage(jid, {
+              video: buffer,
+              caption
+            }, { quoted: msg });
           } else if (isAudio) {
-            await sock.sendMessage(jid, { audio: buffer, mimetype: 'audio/mp4' }, { quoted: msg });
+            await sock.sendMessage(jid, {
+              audio: buffer,
+              mimetype: 'audio/mp4'
+            }, { quoted: msg });
           } else if (isSticker) {
-            await sock.sendMessage(jid, { sticker: buffer }, { quoted: msg });
+            await sock.sendMessage(jid, {
+              sticker: buffer
+            }, { quoted: msg });
           }
         } else if (isText) {
           await sock.sendMessage(
@@ -509,9 +614,12 @@ module.exports = [
         }
       } catch (err) {
         console.error('[SAVE1 ERROR]', err);
+
         await sock.sendMessage(
           jid,
-          { text: '❌ *Failed to download status media. Make sure it has not expired.*' },
+          {
+            text: '❌ *Failed to download status media. Make sure it has not expired.*'
+          },
           { quoted: msg }
         );
       }
@@ -519,4 +627,3 @@ module.exports = [
   },
 
 ];
-
