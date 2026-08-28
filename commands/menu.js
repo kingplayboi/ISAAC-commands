@@ -74,13 +74,12 @@ menuMessage += `└────────────────────�
 
 const categories = {
     'OWNER': ['self', 'public', 'settings', 'botpp', 'getpfp', 'pair', 'pair2', 'save', 'save1', 'kill', 'kill2', 'update', 'updatenow', 'eval', 'antilinkall', 'menutype', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos', 'oadmin', 'mygroups'],
-    'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'badword', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'amute', 'aunmute', 'ban', 'unban', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners'],
+    'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'badword', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'amute', 'aunmute', 'ban', 'unban', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'antigm', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],],
     'SETTINGS': ['anticall', 'antidelete', 'antiedit', 'wapresence', 'autoread', 'autorecording', 'autotyping', 'mode', 'prefix', 'autoview', 'autolike', 'autobio', 'pdm', 'zushi'],
     'DOWNLOADS': ['download', 'igstory', 'pindl', 'play2', 'video', 'video2', 'audio', 'spotify', 'play', 'tiktok', 'ig', 'fb', 'twitter', 'song', 'shazam', 'lyrics', 'lyrics2'],
     'AI': ['gemini', 'imagine', 'vision2', 'groq', 'mi', 'worm', 'gpt', 'dall', 'bing', 'upscale', 'vision', 'void', 'claude', 'wormgpt', 'tts', 'vocalremover', 'transcribe', 'muslimai', 'bibleai', 'speechwriter'],
     'USER': ['block', 'unblock', 'pp', 'fullpp', 'jid', 'gjid', 'left', 'ison'],
     'TOOLS': ['fancy', 'webscan', 'zip', 'screenshot', 'gitclone', 'apk', 'clearcache', 'qr', 'upload', 'zodiac', 'url', 'define'],
-    'SECURITY': ['antigm', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
     'FOOTBALL': ['livescore', 'standings', 'bundesliga', 'epl', 'laliga', 'ligue1', 'seriea', 'ucl', 'news', 'playersearch', 'teamsearch', 'fifa', 'fifaplayoffs', 'euro', 'eplscorers', 'laligascorers', 'bundesligascorers', 'serieascorers', 'ligue1scorers', 'uclscorers'],
     'CODING': ['enc', 'gpass', 'compile-py', 'compile-js', 'compile-c', 'compile-c++', 'base', 'unbase'],
     'MEDIA': ['s', 'take', 'photo', 'mix', 'smeme', 'vv', 'vv2', 'removebg', 'imagesearch', 'similarimage', 'remini'],
