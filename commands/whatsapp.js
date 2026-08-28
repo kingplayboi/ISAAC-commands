@@ -70,7 +70,7 @@ module.exports = [
 
     if (!quotedMessage) {
       return sock.sendMessage(jid, {
-        text: '*❌ Which message should I delete ?*'
+        text: '*Which message should I delete ?*'
       }, { quoted: msg });
     }
 
@@ -88,7 +88,7 @@ module.exports = [
 
       if (!isBotAdmin) {
         return sock.sendMessage(jid, {
-          text: '*❌ Are you an admin ???*'
+          text: '*Are you an admin ???*'
         }, { quoted: msg });
       }
     }
