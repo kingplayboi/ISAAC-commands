@@ -6,6 +6,7 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 
 module.exports = {
   name: 'getfile',
+  aliases: ['sourcefile', 'sendfile'],
   description: 'Get any file from the project directory (developer only).',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;

@@ -1,24 +1,31 @@
-/**
- * commands/clearsudos.js
- * -------------------------
- * Removes all sudo users at once. Owner only.
- * Usage: .clearsudos
- */
 const { isOwner } = require('../utils/isOwner');
-const { clearSudo } = require('../utils/isSudo');
+const { clearSudo, listSudo } = require('../utils/isSudo');
 
 module.exports = {
   name: 'clearsudos',
-  description: 'Removes all sudo users (owner only).',
+  aliases: ['removeallsudos', 'delsudos', 'rsudos'],
+  description: 'Removes all sudo users at once (owner only).',
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
 
     if (!isOwner(msg)) {
-      return sock.sendMessage(jid, { text: '❌ Only the bot owner can use this command.' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ *Only the bot owner can use this command.*' }, { quoted: msg });
     }
 
-    clearSudo();
+    const before = listSudo().length;
 
-    await sock.sendMessage(jid, { text: '✅ All sudo users have been cleared.' }, { quoted: msg });
+    if (before === 0) {
+      return sock.sendMessage(jid, { text: '📋 *No sudo users to remove.*' }, { quoted: msg });
+    }
+
+    try {
+      clearSudo();
+    } catch (e) {
+      return sock.sendMessage(jid, { text: '❌ *Failed to clear sudos. Check the sudo store.*' }, { quoted: msg });
+    }
+
+    await sock.sendMessage(jid, {
+      text: `✅ *All sudo users have been removed.*\n🗑️ *${before} user(s) cleared.*`,
+    }, { quoted: msg });
   },
 };

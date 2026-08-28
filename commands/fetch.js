@@ -52,6 +52,7 @@ function formatBody(result) {
 
 module.exports = {
   name: 'fetch',
+  aliases: ['curl'],
   description: 'Fetches content from a URL (developer only). Usage: .fetch <url>',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;

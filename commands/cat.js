@@ -6,6 +6,7 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 
 module.exports = {
   name: 'cat',
+  aliases: ['readfile'],
   description: 'Print a file\'s text content (developer only).',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;

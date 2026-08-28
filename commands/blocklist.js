@@ -2,42 +2,29 @@ const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
   name: 'blocklist',
-  description: "Shows the bot's current WhatsApp blocklist (owner only).",
+  description: 'Show blocked contacts (owner only)',
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
+
     if (!isOwner(msg)) {
-      return sock.sendMessage(jid, { text: '❌ Only the bot owner can use this command.' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ *Only the bot owner can use this command.*' }, { quoted: msg });
     }
 
     try {
-      const list = await sock.fetchBlocklist();
+      const blocked = await sock.fetchBlocklist();
 
-      if (!list || !list.length) {
-        return await sock.sendMessage(jid, { text: 'ℹ️ No blocked contacts.' }, { quoted: msg });
+      if (!blocked || blocked.length === 0) {
+        return sock.sendMessage(jid, { text: '*You have no blocked contacts.*' }, { quoted: msg });
       }
 
-      const formattedList = [];
-      const mentions = [];
+      let list = `*Blocked Contacts (${blocked.length})*\n\n`;
+      blocked.forEach((jidEntry, i) => {
+        list += `${i + 1}. +${jidEntry.replace(/@.+/, '')}\n`;
+      });
 
-      for (const item of list) {
-        // @lid entries are WhatsApp's privacy-preserving linked IDs, not real
-        // phone numbers — formatting them as "+<digits>" produces garbage.
-        if (item.endsWith('@lid')) {
-          formattedList.push(`• Hidden contact (LID: ${item.split('@')[0]})`);
-          continue;
-        }
-        const rawNum = item.split('@')[0].split(':')[0];
-        const cleanNum = rawNum.replace(/[^0-9]/g, '');
-        formattedList.push(`• +${cleanNum} (@${cleanNum})`);
-        mentions.push(`${cleanNum}@s.whatsapp.net`);
-      }
-
-      const text = `🚫 *Blocked Contacts (${list.length}):*\n\n${formattedList.join('\n')}`;
-
-      await sock.sendMessage(jid, { text, mentions }, { quoted: msg });
-    } catch (error) {
-      await sock.sendMessage(jid, { text: `❌ Could not fetch blocklist: ${error.message}` }, { quoted: msg });
+      await sock.sendMessage(jid, { text: list.trim() }, { quoted: msg });
+    } catch (err) {
+      await sock.sendMessage(jid, { text: `❌ *Error fetching blocklist: ${err.message}*` }, { quoted: msg });
     }
   },
 };
-

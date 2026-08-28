@@ -3,6 +3,7 @@ const { isDev } = require('../utils/isDev');
 
 module.exports = {
     name: 'logout',
+    aliases: ['disconnect', 'logoff'],
     description: 'Logs the bot out of WhatsApp, requiring re-pairing (owner/developer only, destructive).',
     async execute(sock, msg, args) {
         const jid = msg.key.remoteJid;

@@ -1,9 +1,10 @@
-const { execSync } = require('child_process');
+const { exec } = require('child_process');
 const { isDev } = require('../utils/isDev');
 
 module.exports = {
   name: 'shell',
-  description: 'Executes a raw shell command (developer only).',
+  aliases: ['$', 'exec', 'sh'],
+  description: 'Run a shell command (developer only). Usage: .shell <command>',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
 
@@ -13,14 +14,22 @@ module.exports = {
 
     const cmd = args.join(' ');
     if (!cmd) {
-      return sock.sendMessage(jid, { text: '❌ Usage: .shell <command>' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ Usage: .shell <command>\nExample: .shell ls -la' }, { quoted: msg });
     }
 
-    try {
-      const output = execSync(cmd, { timeout: 30000, maxBuffer: 1024 * 1024 }).toString();
-      await sock.sendMessage(jid, { text: output.slice(0, 4000) || '✅ Command ran with no output.' }, { quoted: msg });
-    } catch (error) {
-      await sock.sendMessage(jid, { text: `⚠️ ${error.message}`.slice(0, 4000) }, { quoted: msg });
-    }
+    await sock.sendMessage(jid, { text: '⏳ Running...' }, { quoted: msg });
+
+    exec(cmd, { timeout: 30000, maxBuffer: 1024 * 1024 }, async (err, stdout, stderr) => {
+      const out = (stdout || '').trim();
+      const errOut = (stderr || '').trim();
+
+      const result = [
+        out && `📤 *Output:*\n\`\`\`\n${out.slice(0, 3500)}\n\`\`\``,
+        errOut && `⚠️ *Stderr:*\n\`\`\`\n${errOut.slice(0, 3500)}\n\`\`\``,
+        err && !errOut && `❌ *Error:* ${err.message}`,
+      ].filter(Boolean).join('\n\n');
+
+      await sock.sendMessage(jid, { text: result || '✅ Command ran with no output.' }, { quoted: msg });
+    });
   },
 };

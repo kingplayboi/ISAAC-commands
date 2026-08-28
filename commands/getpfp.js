@@ -16,6 +16,7 @@ function downloadBuffer(url) {
 
 module.exports = {
   name: 'getpfp',
+  aliases: ['pp'],
   description: "Get a user's profile picture. Usage: .getpfp <number> or @user (or reply to their message)",
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;

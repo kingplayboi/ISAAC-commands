@@ -10,12 +10,13 @@ const axios = require('axios');
 
 module.exports = {
   name: 'eval',
+  aliases: ['=>'],
   description: 'Runs raw JavaScript for debugging (dev only). Shortcuts: .eval api | settings | uptime | version | commands | env',
   async execute(sock, msg, args, commands) {
     const jid = msg.key.remoteJid;
 
     if (!isDev(msg, sock)) {
-      return sock.sendMessage(jid, { text: '❌ Only the bot developer who is ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ can use this command dumbass.' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ Only the dev, ᴾᴬᴾᴾᴵ ᴵˢᴬᴬᶜ can execute this command dumbass.' }, { quoted: msg });
     }
 
     const code = args.join(' ');

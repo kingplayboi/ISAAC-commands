@@ -12,6 +12,7 @@ module.exports = {
             return await sock.sendMessage(msg.key.remoteJid, { text: '🟢 *Always Online:* ENABLED [🟢]' });
         } else if (args[0] === 'off') {
             settingsStore.set('wapresence', false);
+            await sock.sendPresenceUpdate('unavailable');
             return await sock.sendMessage(msg.key.remoteJid, { text: '🟢 *Always Online:* DISABLED [🔴]' });
         }
 

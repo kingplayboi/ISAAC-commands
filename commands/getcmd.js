@@ -4,6 +4,7 @@ const { isDev } = require('../utils/isDev');
 
 module.exports = {
   name: 'getcmd',
+  aliases: ['getcode'],
   description: 'Get a command file\'s source code (developer only).',
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;

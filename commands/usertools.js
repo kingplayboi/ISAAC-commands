@@ -16,127 +16,40 @@ function downloadBuffer(url) {
   });
 }
 
+function formatTimestamp(unixSeconds) {
+  const d = new Date(unixSeconds * 1000);
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  return {
+    day: days[d.getDay()],
+    date: d.getDate(),
+    month: months[d.getMonth()],
+    year: d.getFullYear(),
+    time: d.toLocaleTimeString('en-US'),
+  };
+}
+
 module.exports = [
 
-  // ── BLOCK ───────────────────────────────────────────────────────────────────
-  {
-    name: 'block',
-    description: 'Block a user. Usage: .block @user (or reply to their message)',
-    async execute(sock, msg) {
-      const jid = msg.key.remoteJid;
-      const ctx = msg.message?.extendedTextMessage?.contextInfo;
-      const target = ctx?.mentionedJid?.[0] || ctx?.participant;
-
-      if (!target) {
-        return sock.sendMessage(jid, { text: '❌ Tag or reply to the user you want to block.' }, { quoted: msg });
-      }
-
-      try {
-        await sock.updateBlockStatus(target, 'block');
-        await sock.sendMessage(jid, { text: `🚫 Blocked @${target.split('@')[0]}.`, mentions: [target] }, { quoted: msg });
-      } catch (e) {
-        await sock.sendMessage(jid, { text: '❌ Could not block user: ' + e.message }, { quoted: msg });
-      }
-    }
-  },
-
-  // ── UNBLOCK ─────────────────────────────────────────────────────────────────
-  {
-    name: 'unblock',
-    description: 'Unblock a user. Usage: .unblock 254712345678',
-    async execute(sock, msg, args) {
-      const jid = msg.key.remoteJid;
-      const number = args[0]?.replace(/[^0-9]/g, '');
-
-      if (!number) {
-        return sock.sendMessage(jid, { text: '❌ Usage: .unblock 254712345678' }, { quoted: msg });
-      }
-
-      try {
-        const targetJid = `${number}@s.whatsapp.net`;
-        await sock.updateBlockStatus(targetJid, 'unblock');
-        await sock.sendMessage(jid, { text: `✅ Unblocked +${number}.` }, { quoted: msg });
-      } catch (e) {
-        await sock.sendMessage(jid, { text: '❌ Could not unblock user: ' + e.message }, { quoted: msg });
-      }
-    }
-  },
-
-  // ── PP ─────────────────────────────────────────
-{
-    name: 'pp',
-    description: "Get a user's profile picture. Usage: .pp @user (or reply to their message)",
-    async execute(sock, msg) {
-        const jid = msg.key.remoteJid;
-        const ctx = msg.message?.extendedTextMessage?.contextInfo;
-
-        const target =
-            ctx?.mentionedJid?.[0] ||
-            ctx?.participantAlt ||
-            ctx?.participant ||
-            msg.key.participant ||
-            msg.key.remoteJid;
-
-        console.log({
-            target,
-            participant: ctx?.participant,
-            participantAlt: ctx?.participantAlt,
-            mentioned: ctx?.mentionedJid
-        });
-
-        try {
-            const ppUrl = await sock.profilePictureUrl(target, 'image');
-
-            console.log("Profile Picture URL:", ppUrl);
-
-            if (!ppUrl) {
-                return await sock.sendMessage(
-                    jid,
-                    { text: '❌ No profile picture found.' },
-                    { quoted: msg }
-                );
-            }
-
-            await sock.sendMessage(
-                jid,
-                {
-                    image: { url: ppUrl },
-                    caption: `🖼 Profile picture of @${target.split('@')[0]}`,
-                    mentions: [target]
-                },
-                { quoted: msg }
-            );
-
-        } catch (err) {
-            console.log("PP ERROR:", err);
-
-            await sock.sendMessage(
-                jid,
-                {
-                    text: `❌ Couldn't fetch profile picture.\n\n${err.message}`
-                },
-                { quoted: msg }
-            );
-        }
-    }
-},
 
   // ── FULLPP ──
   {
     name: 'fullpp',
+    aliases: ['setpp'],
     description: "Set your WhatsApp profile picture from a replied image. Usage: reply to an image with .fullpp",
     async execute(sock, msg) {
       const jid = msg.key.remoteJid;
 
       if (!msg.key.fromMe) {
-        return sock.sendMessage(jid, { text: '❌ Only the owner can change the profile picture.' }, { quoted: msg });
+        return sock.sendMessage(jid, { text: '❌ *Only the owner can change the profile picture.*' }, { quoted: msg });
       }
 
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const quoted = ctx?.quotedMessage;
 
       if (!quoted?.imageMessage) {
-        return sock.sendMessage(jid, { text: '❌ Reply to an image with .fullpp' }, { quoted: msg });
+        return sock.sendMessage(jid, { text: '❌ *Reply to an image with .fullpp*' }, { quoted: msg });
       }
 
       try {
@@ -147,9 +60,9 @@ module.exports = [
         );
 
         await sock.updateProfilePicture(sock.user.id, media);
-        await sock.sendMessage(jid, { text: '✅ Profile picture updated.' }, { quoted: msg });
+        await sock.sendMessage(jid, { text: '✅ *Profile picture updated.*' }, { quoted: msg });
       } catch (e) {
-        await sock.sendMessage(jid, { text: '❌ Could not update profile picture: ' + e.message }, { quoted: msg });
+        await sock.sendMessage(jid, { text: `❌ *Could not update profile picture: ${e.message}*` }, { quoted: msg });
       }
     }
   },
@@ -174,7 +87,7 @@ module.exports = [
     async execute(sock, msg) {
       const jid = msg.key.remoteJid;
       if (!jid.endsWith('@g.us')) {
-        return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+        return sock.sendMessage(jid, { text: '❌ *This command only works in groups.*' }, { quoted: msg });
       }
       await sock.sendMessage(jid, { text: `🆔 *Group JID:*\n${jid}` }, { quoted: msg });
     }
@@ -190,7 +103,7 @@ module.exports = [
       if (!jid.endsWith('@g.us')) {
         return sock.sendMessage(
           jid,
-          { text: '❌ This command only works in groups.' },
+          { text: '❌ *This command only works in groups.*' },
           { quoted: msg }
         );
       }
@@ -198,14 +111,14 @@ module.exports = [
       if (!isOwner(msg)) {
         return sock.sendMessage(
           jid,
-          { text: '❌ Only the bot owner can use this command.' },
+          { text: '❌ *Only the bot owner can use this command.*' },
           { quoted: msg }
         );
       }
 
       await sock.sendMessage(
         jid,
-        { text: '😡 Goodbye idiots! Bot is leaving this group now.' },
+        { text: '😡 *Goodbye idiots! ISAAC-MD is leaving this group now.*' },
         { quoted: msg }
       );
 
