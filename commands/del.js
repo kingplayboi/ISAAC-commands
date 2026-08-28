@@ -1,75 +1,89 @@
-async function isJidGroupAdmin(metadata, jid) {
-  if (!jid) return false;
-  const digits = jid.split('@')[0].split(':')[0];
-  return metadata.participants.some((p) => {
-    const pDigits = (p.id || '').split('@')[0].split(':')[0];
-    return pDigits === digits && (p.admin === 'admin' || p.admin === 'superadmin');
-  });
+const { isOwner } = require('../utils/isOwner');
+
+function resolveJid(msg) {
+  const rawJid = msg.key.remoteJid;
+  return rawJid.endsWith('@lid') && msg.key.remoteJidAlt
+    ? msg.key.remoteJidAlt
+    : rawJid;
+}
+
+function getQuoted(sock, msg) {
+  const jid = resolveJid(msg);
+  const ctx = msg.message?.extendedTextMessage?.contextInfo;
+  const quotedMessage = ctx?.quotedMessage;
+
+  if (!quotedMessage) {
+    return { jid, ctx: null, quotedMessage: null, quotedKey: null, isOwnMessage: false };
+  }
+
+  const quotedParticipant = ctx.participantPn || ctx.participantAlt || ctx.participant;
+  const botNumber = sock.user?.id?.split(':')[0];
+  const quotedDigits = quotedParticipant?.split('@')[0]?.split(':')[0];
+  const isOwnMessage = !!botNumber && quotedDigits === botNumber;
+
+  const quotedKey = {
+    remoteJid: jid,
+    id: ctx.stanzaId,
+    fromMe: isOwnMessage,
+    participant: ctx.participant,
+  };
+
+  return { jid, ctx, quotedMessage, quotedKey, isOwnMessage };
 }
 
 module.exports = {
   name: 'del',
   aliases: ['delete'],
-  description: 'Delete a quoted message.',
+  description: 'Delete a message. Reply to a message with .del',
   async execute(sock, msg) {
-    const jid = msg.key.remoteJid;
-    const isGroup = jid.endsWith('@g.us');
-
-    const ctx = msg.message?.extendedTextMessage?.contextInfo;
-    const quotedMessage = ctx?.quotedMessage;
+    const { jid, quotedMessage, quotedKey, isOwnMessage } = getQuoted(sock, msg);
 
     if (!quotedMessage) {
-      return sock.sendMessage(jid, { text: '❌ *No message quoted for deletion.*' }, { quoted: msg });
+      return sock.sendMessage(jid, {
+        text: '❌ *Which message should I delete?*'
+      }, { quoted: msg });
     }
 
-    const stanzaId = ctx.stanzaId || '';
-    const quotedParticipant = ctx.participantPn || ctx.participantAlt || ctx.participant;
-    const quotedDigits = quotedParticipant?.split('@')[0]?.split(':')[0];
-    const botNumber = sock.user?.id?.split(':')[0];
-    const isOwnMessage = !!botNumber && quotedDigits === botNumber;
+    const isGroup = jid.endsWith('@g.us');
 
     if (isOwnMessage) {
-      await sock.sendMessage(jid, {
-        delete: { remoteJid: jid, fromMe: true, id: stanzaId, participant: isGroup ? ctx.participant : undefined }
-      });
+      if (isGroup) {
+        return sock.sendMessage(jid, {
+          text: '❌ *I cannot delete my own messages.*'
+        }, { quoted: msg });
+      }
+      if (!isOwner(msg)) {
+        return sock.sendMessage(jid, {
+          text: '❌ *Only my owner can delete my messages.*'
+        }, { quoted: msg });
+      }
+      await sock.sendMessage(jid, { delete: quotedKey });
       return;
     }
 
     if (!isGroup) {
       return sock.sendMessage(jid, {
-        text: '❌ *I can only delete my own messages in a DM.*'
+        text: '❌ *I can only delete messages in groups, and only with admin rights.*'
       }, { quoted: msg });
     }
 
-    let metadata;
     try {
-      metadata = await sock.groupMetadata(jid);
+      const metadata = await sock.groupMetadata(jid);
+      const botNumber = sock.user?.id?.split(':')[0];
+      const botIsAdmin = metadata.participants.some((p) => {
+        const pDigits = (p.id || '').split('@')[0].split(':')[0];
+        return pDigits === botNumber && (p.admin === 'admin' || p.admin === 'superadmin');
+      });
+
+      if (!botIsAdmin) {
+        return sock.sendMessage(jid, { text: '❌ *Are you an admin ???*' }, { quoted: msg });
+      }
     } catch (e) {
       console.error('[DEL ERROR] Could not fetch group metadata:', e.message);
-      return sock.sendMessage(jid, { text: '❌ *Could not check group admin status. Try again.*' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '❌ *Could not check admin status. Try again.*' }, { quoted: msg });
     }
 
-    const botIsAdmin = await isJidGroupAdmin(metadata, botNumber ? `${botNumber}@s.whatsapp.net` : null);
-    if (!botIsAdmin) {
-      return sock.sendMessage(jid, { text: '❌ *I need to be an admin to delete messages.*' }, { quoted: msg });
-    }
-
-    const senderJid = msg.key.participant || msg.participant;
-    const senderIsAdmin = await isJidGroupAdmin(metadata, senderJid);
-    if (!senderIsAdmin) {
-      return sock.sendMessage(jid, { text: '❌ *Only group admins can use this command.*' }, { quoted: msg });
-    }
-
-    const isBaileysMessage = stanzaId.length === 20 || stanzaId.startsWith('BAE5');
-
-    if (isBaileysMessage) {
-      return sock.sendMessage(jid, {
-        text: '❌ *I cannot delete this. Quoted message appears to be from another bot.*'
-      }, { quoted: msg });
-    }
-
-    await sock.sendMessage(jid, {
-      delete: { remoteJid: jid, fromMe: false, id: stanzaId, participant: quotedParticipant }
-    });
+    await sock.sendMessage(jid, { delete: quotedKey });
   }
 };
+
