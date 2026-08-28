@@ -15,11 +15,13 @@ module.exports = {
     let antilinkOn = false;
     let pdmOn = false;
     let antigmMode = 'N/A';
+    let setgreetOn = false;
 
     if (jid.endsWith('@g.us')) {
       antilinkOn = groupSettingsStore.get(jid, 'antilink', false);
       pdmOn = groupSettingsStore.get(jid, 'pdm', false);
       antigmMode = groupSettingsStore.get(jid, 'antigm', 'off').toUpperCase();
+      setgreetOn = groupSettingsStore.get(jid, 'setgreet', false);
     }
 
     const text = `╔══════════════════════╗
@@ -45,7 +47,8 @@ module.exports = {
 ┣ AutoRecording: ${onOff(settingsStore.get('autorecording', false))}
 ┣ AutoTyping: ${onOff(settingsStore.get('autotyping', false))}
 ┣ PDM: ${onOff(pdmOn)}
-┗ WelcomeGoodbye: ${onOff(settingsStore.get('welcomegoodbye', false))}
+┣ WelcomeGoodbye: ${onOff(settingsStore.get('welcomegoodbye', false))}
+┗ SetGreet: ${onOff(setgreetOn)}
 
 *💬 Bot Behaviour*
 ┣ Mode: 🌐 ${settingsStore.get('mode', 'public').toUpperCase()}
@@ -56,4 +59,3 @@ module.exports = {
     await sock.sendMessage(jid, { text }, { quoted: msg });
   },
 };
-
