@@ -94,22 +94,6 @@ module.exports = [
     }
   },
 
-  // ── DEL ───────────────────────────────────────────────────────────────────
-  {
-    name: 'del',
-    description: 'Delete a message. Reply to a message with .del',
-    async execute(sock, msg) {
-      const { jid, quotedMessage, quotedKey } = getQuoted(sock, msg);
-
-      if (!quotedMessage) {
-        return sock.sendMessage(jid, {
-          text: '❌ Reply to the message you want to delete.'
-        }, { quoted: msg });
-      }
-
-      await sock.sendMessage(jid, { delete: quotedKey });
-    }
-  },
 
   // ── SETSTATUS ─────────────────────────────────────────────────────────────
   {
