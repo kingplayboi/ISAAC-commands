@@ -29,7 +29,7 @@ module.exports = {
     } else {
       await sock.sendMessage(
         jid,
-        { text: '❌ *Who should I add, provide a number or reply to their message.*\nUsage: .add 254754574642\nOr: reply to their message with .add' },
+        { text: '❌ *Who should I add, provide a number or reply to their mesage*' },
         { quoted: msg }
       );
       return;
