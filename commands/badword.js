@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const settingsStore = require('../utils/settingsStore');
+const { isOwner } = require('../utils/isOwner');
+const { isSudo } = require('../utils/isSudo');
 
 const listPath = path.join(__dirname, '../config/badwords.json');
 
@@ -16,7 +18,7 @@ module.exports = {
     name: 'badword',
     description: 'Manage the bad word filter. Usage: .badword on|off|add <word>|remove <word>|list',
     async execute(sock, msg, args) {
-        if (!msg.key.fromMe) return;
+        if (!isOwner(msg) && !isSudo(msg)) return;
         const jid = msg.key.remoteJid;
         const sub = args[0]?.toLowerCase();
 

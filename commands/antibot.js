@@ -1,10 +1,11 @@
 const settingsStore = require('../utils/settingsStore');
+const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
     name: 'antibot',
     description: 'Toggle kicking messages that look like bot commands from non-admins.',
     async execute(sock, msg, args) {
-        if (!msg.key.fromMe) return;
+        if (!isOwner(msg)) return;
 
         if (args[0] === 'on') {
             settingsStore.set('antibot', true);

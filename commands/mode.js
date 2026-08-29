@@ -1,10 +1,11 @@
 const settingsStore = require('../utils/settingsStore');
+const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
     name: 'mode',
     description: 'Toggle bot work mode between public and private.',
     async execute(sock, msg, args) {
-        if (!msg.key.fromMe) return;
+        if (!isOwner(msg)) return;
 
         if (args[0] === 'public' || args[0] === 'private') {
             settingsStore.set('mode', args[0]);

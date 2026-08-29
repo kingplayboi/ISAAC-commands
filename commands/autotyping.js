@@ -1,10 +1,11 @@
 const settingsStore = require('../utils/settingsStore');
+const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
     name: 'autotyping',
     description: 'Toggle automatic typing status for incoming messages.',
     async execute(sock, msg, args) {
-        if (!msg.key.fromMe) return; // Owner only
+        if (!isOwner(msg)) return;
 
         if (args[0] === 'on') {
             settingsStore.set('autotyping', true);

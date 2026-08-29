@@ -41,7 +41,7 @@ module.exports = [
     async execute(sock, msg) {
       const jid = msg.key.remoteJid;
 
-      if (!msg.key.fromMe) {
+      if (!isOwner(msg)) {
         return sock.sendMessage(jid, { text: '❌ *Only the owner can change the profile picture.*' }, { quoted: msg });
       }
 

@@ -1,10 +1,11 @@
 const settingsStore = require('../utils/settingsStore');
+const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
     name: 'autobio',
     description: 'Toggle automatic bio/about text updates.',
     async execute(sock, msg, args) {
-        if (!msg.key.fromMe) return;
+        if (!isOwner(msg)) return;
 
         if (args[0] === 'on') {
             settingsStore.set('autobio', true);

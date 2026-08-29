@@ -1,10 +1,11 @@
 const settingsStore = require('../utils/settingsStore');
+const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
     name: 'menutype',
     description: 'Set the menu display style. Usage: .menutype list|button',
     async execute(sock, msg, args) {
-        if (!msg.key.fromMe) return;
+        if (!isOwner(msg)) return;
 
         const choice = args[0]?.toLowerCase();
 

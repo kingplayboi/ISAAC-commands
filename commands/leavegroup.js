@@ -1,10 +1,12 @@
+const { isOwner } = require('../utils/isOwner');
+
 module.exports = {
   name: 'leavegroup',
   aliases: ['leavegc', 'leavebylink'],
   description: 'Makes the bot leave a group using its invite link (Owner only).',
 
   async execute(sock, msg, args) {
-    if (!msg.key.fromMe) {
+    if (!isOwner(msg)) {
       return sock.sendMessage(
         msg.key.remoteJid,
         { text: '❌ This command is owner only.' },

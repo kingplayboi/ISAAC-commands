@@ -1,10 +1,11 @@
 const settingsStore = require('../utils/settingsStore');
+const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
     name: 'public',
     description: 'Set bot to public mode.',
     async execute(sock, msg) {
-        if (!msg.key.fromMe) return;
+        if (!isOwner(msg)) return;
 
         settingsStore.set('mode', 'public');
         await sock.sendMessage(msg.key.remoteJid, {

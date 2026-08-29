@@ -1,5 +1,6 @@
 const settingsStore = require('../utils/settingsStore');
 const config = require('../config/config');
+const { isOwner } = require('../utils/isOwner');
 
 module.exports = {
   name: 'prefix',
@@ -7,7 +8,7 @@ module.exports = {
   async execute(sock, msg, args) {
     const jid = msg.key.remoteJid;
 
-    if (!msg.key.fromMe) {
+    if (!isOwner(msg)) {
       return sock.sendMessage(jid, { text: '❌ Only the owner can change the prefix.' }, { quoted: msg });
     }
 

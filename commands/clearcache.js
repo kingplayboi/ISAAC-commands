@@ -1,22 +1,6 @@
-/**
- * commands/clearcache.js
- * -------------------------
- * Clears every in-memory cache the bot accumulates over time, so long
- * uptime doesn't slowly grow memory usage:
- *   - messageCache      (antidelete's recent-message store)
- *   - groupCache        (group metadata cache)
- *   - game.js's activeGames
- *   - moregames.js's activeWordGames / activeMathGames
- *   - ai.js's worm (WormGPT) conversation sessions
- *
- * Usage: .clearcache (owner only)
- *
- * runClearCache() is also exported so index.js can call it on a timer
- * for fully automatic periodic clearing, not just on-demand.
- */
-
 const messageCache = require('../utils/messageCache');
 const { groupCache } = require('../utils/groupCache');
+const { isOwner } = require('../utils/isOwner');
 
 function runClearCache(commands) {
   const results = {};
@@ -61,7 +45,7 @@ module.exports = {
   async execute(sock, msg, args, commands) {
     const jid = msg.key.remoteJid;
 
-    if (!msg.key.fromMe) {
+    if (!isOwner(msg)) {
       return sock.sendMessage(jid, { text: '❌ Only the owner can use this command.' }, { quoted: msg });
     }
 
