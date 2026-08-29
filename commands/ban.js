@@ -8,7 +8,7 @@ module.exports = {
         const jid = msg.key.remoteJid;
 
         if (!isOwner(msg)) {
-            return sock.sendMessage(jid, { text: '❌ Only the bot owner can use this command.' }, { quoted: msg });
+            return sock.sendMessage(jid, { text: '*❌ Only the bot owner can use this command.*' }, { quoted: msg });
         }
 
         const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
@@ -17,18 +17,18 @@ module.exports = {
 
         if (!target) {
             return sock.sendMessage(jid, {
-                text: '❌ Who should I ban, mention or tag someone with the command.\n\nUsage: *.ban @user* or reply to their message with *.ban*',
+                text: '*❌ Who should I ban, mention or tag someone with the command.*',
             }, { quoted: msg });
         }
 
         if (isBanned(target)) {
-            return sock.sendMessage(jid, { text: `ℹ️ @${target.split('@')[0]} is already banned.`, mentions: [target] }, { quoted: msg });
+            return sock.sendMessage(jid, { text: `*ℹ️ @${target.split('@')[0]} is already banned.*`, mentions: [target] }, { quoted: msg });
         }
 
         banUser(target);
 
         await sock.sendMessage(jid, {
-            text: `🚫 @${target.split('@')[0]} has been banned from using bot commands.`,
+            text: `*🚫 @${target.split('@')[0]} has been banned from using bot commands.*`,
             mentions: [target],
         }, { quoted: msg });
     },
