@@ -11,6 +11,8 @@ module.exports = {
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
 
+    if (msg.key.fromMe) return;
+
     if (!isDev(msg, sock)) return;
 
     const prefix = settingsStore.get('prefix', config.prefix);
@@ -24,3 +26,4 @@ module.exports = {
     );
   }
 };
+

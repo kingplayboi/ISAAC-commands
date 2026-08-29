@@ -15,7 +15,7 @@ const GOOGLE_KEY = process.env.GOOGLE_STT_KEY || 'AIzaSyBOti4mM-6x9WDnZIjIeyEU21
 
 module.exports = {
   name: 'totext',
-  aliases: ['stt', 'listen', 'transcribe', 'audiotxt'],
+  aliases: ['stt', 'listen', 'scribe', 'audiotxt'],
   description: 'Convert a quoted voice/audio message to text. Reply to a voice note with .totext',
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
