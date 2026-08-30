@@ -26,7 +26,7 @@ module.exports = {
       return sock.sendMessage(jid, {
         text:
           '⚠️ *DANGER ZONE* ⚠️\n\n' +
-          'This will remove *every other member* from this group. This cannot be undone.\n\n' +
+          'Listen up human, this will remove *every other member* from this group. This action is irreversible.\n\n' +
           'If you are absolutely sure, type:\n*.kill ok*'
       }, { quoted: msg });
     }
