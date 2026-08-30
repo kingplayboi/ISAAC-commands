@@ -60,17 +60,14 @@ const currentTime = new Intl.DateTimeFormat('en-US', {
         const prefix = settingsStore.get('prefix', config.prefix);
         const workType = settingsStore.get('mode', config.WORK_TYPE);
 
-        let menuMessage = `┌──────────────────────────────┐\n`;
-        menuMessage += `  🤖 *_ISAAC BOT_*\n`;
-        menuMessage += `  ━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        menuMessage += `  ⚡ Prefix : [ ${prefix || '.'} ]\n`;
-        menuMessage += `  🔒 Mode   : ${(workType || 'public').toUpperCase()}\n`;
-        menuMessage += `  🕒 Time   : ${currentTime}\n`;
-        menuMessage += `  🗓️ Date   : ${currentDate}\n`;
-        menuMessage += `  💾 Ram    : ${usedRamGb} GB / ${totalRamGb} GB\n`;
-        menuMessage += `  ⏱️ Uptime : ${formatUptime(uptimeSeconds)}\n`;
-menuMessage += `  🔌 Plugins : ${new Set(commands.values()).size} commands\n`;
-menuMessage += `└──────────────────────────────┘\n`;
+        let menuMessage = `> 🤖 *ISAAC BOT*\n`;
+        menuMessage += `> ⚡ Prefix : [ ${prefix || '.'} ]\n`;
+        menuMessage += `> 🔒 Mode   : ${(workType || 'public').toUpperCase()}\n`;
+        menuMessage += `> 🕒 Time   : ${currentTime}\n`;
+        menuMessage += `> 🗓️ Date   : ${currentDate}\n`;
+        menuMessage += `> 💾 Ram    : ${usedRamGb} GB / ${totalRamGb} GB\n`;
+        menuMessage += `> ⏱️ Uptime : ${formatUptime(uptimeSeconds)}\n`;
+        menuMessage += `> 🔌 Plugins : ${new Set(commands.values()).size} commands\n\n`;
 
 const categories = {
     'OWNER': ['self', 'public', 'settings', 'botpp', 'getpfp', 'pair', 'pair2', 'save', 'save1', 'kill', 'kill2', 'update', 'updatenow', 'eval', 'antilinkall', 'menutype', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos', 'oadmin', 'mygroups'],
@@ -88,11 +85,11 @@ const categories = {
     'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
     'UTILITY': ['isaac', 'trt', 'runtime', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
 };        for (const [categoryName, commandList] of Object.entries(categories)) {
-            menuMessage += ` ╭─❏ *${categoryName}* ❏\n`;
+            menuMessage += `> ❏ *${categoryName}*\n`;
             commandList.forEach(cmd => {
-                menuMessage += ` │ ${formatCommand(cmd)}\n`;
+                menuMessage += `> ${formatCommand(cmd)}\n`;
             });
-            menuMessage += ` ╰─────────────────\n`;
+            menuMessage += `\n`;
         }
 
                  const savedBanner = settingsStore.get('menu_banner', null);
@@ -120,4 +117,3 @@ const categories = {
         }
     },
 };
-
