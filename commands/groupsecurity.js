@@ -27,11 +27,12 @@ module.exports = [
 
   {
     name: 'antigm',
+    aliases: ['antistatusmention', 'nostatus'],
     description: 'Anti-group-mention protection. Usage: .antigm off/on/kick/warn',
     async execute(sock, msg, args) {
       const jid = msg.key.remoteJid;
       if (!jid.endsWith('@g.us')) {
-        return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+        return sock.sendMessage(jid, { text: '❌ Is this a group ? This command only works in groups.' }, { quoted: msg });
       }
 
       const mode = args[0]?.toLowerCase();
@@ -46,6 +47,7 @@ module.exports = [
 
   {
     name: 'antilink',
+    aliases: ['nolinks'],
     description: 'Anti-link protection. Usage: .antilink off/on/kick/warn (on = delete only, warn = delete + warn, kick = delete + kick)',
     async execute(sock, msg, args) {
       const jid = msg.key.remoteJid;

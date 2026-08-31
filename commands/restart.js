@@ -10,7 +10,7 @@ module.exports = {
             return sock.sendMessage(jid, { text: '*❌ Are you my owner ?.*' }, { quoted: msg });
         }
 
-        await sock.sendMessage(jid, { text: '*🔄 Restarting bot... unlike your ex, I\'ll be back.*' }, { quoted: msg });
+        await sock.sendMessage(jid, { text: '*🔄 System restart initiated, Restarting bot....*' }, { quoted: msg });
         setTimeout(() => process.exit(0), 1000);
     },
 };

@@ -66,6 +66,8 @@ async function checkHerokuUpdate() {
 module.exports = [
   {
     name: 'update',
+    aliases: ['upgrade'],
+    noprefix: ['update', 'upgrade'],
     description: 'Check whether a newer version of the bot is available. Usage: .update',
     async execute(sock, msg) {
       const jid = msg.key.remoteJid;
@@ -123,6 +125,8 @@ module.exports = [
 
   {
     name: 'updatenow',
+    aliases: ['upgradenow'],
+    noprefix: ['updatenow', 'upgradenow'],
     description: 'Owner-only: update and restart/redeploy the bot. Usage: .updatenow',
     async execute(sock, msg) {
       const jid = msg.key.remoteJid;
