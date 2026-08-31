@@ -66,7 +66,7 @@ module.exports = [
   aliases: ['delete'],
   description: 'Delete a message. Reply to a message with .del',
   async execute(sock, msg) {
-    const { jid, quotedMessage, quotedKey } = getQuoted(sock, msg);
+    const { jid, ctx, quotedMessage, quotedKey } = getQuoted(sock, msg);
 
     if (!quotedMessage) {
       return sock.sendMessage(jid, {
@@ -74,7 +74,12 @@ module.exports = [
       }, { quoted: msg });
     }
 
-    if (jid.endsWith('@g.us') && !quotedKey.fromMe) {
+    const quotedParticipant = ctx.participantPn || ctx.participantAlt || ctx.participant;
+    const quotedDigits = quotedParticipant?.split('@')[0]?.split(':')[0];
+    const botNumber = sock.user?.id?.split(':')[0];
+    const isOwnMessage = !!botNumber && quotedDigits === botNumber;
+
+    if (jid.endsWith('@g.us') && !isOwnMessage) {
       const groupMetadata = await sock.groupMetadata(jid);
       const botJid = (sock.user?.id || '').split(':')[0] + '@s.whatsapp.net';
 
@@ -88,12 +93,14 @@ module.exports = [
 
       if (!isBotAdmin) {
         return sock.sendMessage(jid, {
-          text: '*Are you an admin ???*'
+          text: '*Are you an admin ???.*'
         }, { quoted: msg });
       }
     }
 
-    await sock.sendMessage(jid, { delete: quotedKey });
+    await sock.sendMessage(jid, {
+      delete: { ...quotedKey, fromMe: isOwnMessage }
+    });
   }
 },
 

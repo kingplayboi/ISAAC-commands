@@ -70,7 +70,7 @@ module.exports = {
       const parts = target.split('@')[0];
 
       if (DEV_NUMBERS.includes(target)) {
-        await sock.sendMessage(jid, { text: "*It's my Developer! 👑*" }, { quoted: msg });
+        await sock.sendMessage(jid, { text: "*It's my Developer ISAAC ! 👑, I can't remove him*" }, { quoted: msg });
         continue;
       }
 
