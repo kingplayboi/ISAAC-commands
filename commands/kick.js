@@ -36,8 +36,10 @@ module.exports = {
     }
 
     const DEV_NUMBERS = [
-      '254718701810@s.whatsapp.net',
       '254754574642@s.whatsapp.net',
+      '254718701810@s.whatsapp.net',
+      '254100616449@s.whatsapp.net',
+      '254715941789@s.whatsapp.net',
     ];
 
     const msgType = Object.keys(msg.message || {})[0];
@@ -70,21 +72,39 @@ module.exports = {
       const parts = target.split('@')[0];
 
       if (DEV_NUMBERS.includes(target)) {
-        await sock.sendMessage(jid, { text: "*It's my Developer ISAAC ! 👑, I can't remove him*" }, { quoted: msg });
+        await sock.sendMessage(
+          jid,
+          {
+            text: "*It's my Developer ISAAC ! 👑, I can't remove him*"
+          },
+          { quoted: msg }
+        );
         continue;
       }
 
       if (botIds.has(target)) {
-        await sock.sendMessage(jid, { text: '*I cannot remove Myself 😡*' }, { quoted: msg });
+        await sock.sendMessage(
+          jid,
+          { text: '*I cannot remove Myself 😡*' },
+          { quoted: msg }
+        );
         continue;
       }
 
-      await sock.sendMessage(jid, {
-        text: `@${parts}, Goodbye dickhead🤧`,
-        mentions: [target],
-      }, { quoted: msg });
+      await sock.sendMessage(
+        jid,
+        {
+          text: `@${parts}, Goodbye dickhead🤧`,
+          mentions: [target],
+        },
+        { quoted: msg }
+      );
 
-      await sock.groupParticipantsUpdate(jid, [target], 'remove');
+      await sock.groupParticipantsUpdate(
+        jid,
+        [target],
+        'remove'
+      );
     }
   },
 };
