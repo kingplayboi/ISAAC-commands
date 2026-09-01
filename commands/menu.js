@@ -73,7 +73,7 @@ menuMessage += `  🔌 *Plugins* : ${new Set(commands.values()).size} commands\n
 menuMessage += `└──────────────────────────────┘\n`;
 
 const categories = {
-    'OWNER': ['self', 'public', 'settings', 'botpp', 'getpfp', 'pair', 'pair2', 'save', 'save1', 'kill', 'kill2', 'update', 'updatenow', 'eval', 'antilinkall', 'menutype', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos', 'oadmin', 'mygroups'],
+    'OWNER': ['self', 'public', 'settings', 'botpp', 'getprefix', 'getpfp', 'pair', 'pair2', 'save', 'save1', 'kill', 'kill2', 'update', 'updatenow', 'eval', 'antilinkall', 'menutype', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'block', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos', 'oadmin', 'mygroups'],
     'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'badword', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'amute', 'aunmute', 'ban', 'unban', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'antigm', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
     'SETTINGS': ['anticall', 'antidelete', 'antiedit', 'wapresence', 'autoread', 'autorecording', 'autotyping', 'mode', 'prefix', 'autoview', 'autolike', 'autobio', 'pdm', 'zushi'],
     'DOWNLOADS': ['download', 'igstory', 'pindl', 'play2', 'video', 'video2', 'audio', 'spotify', 'play', 'tiktok', 'ig', 'fb', 'twitter', 'song', 'shazam', 'lyrics', 'lyrics2'],
@@ -86,7 +86,7 @@ const categories = {
     'WHATSAPP': ['poll', 'react', 'del', 'setstatus', 'status', 'caption', 'doc', 'cinfo', 'clear'],
     'CONVERTER': ['topdf', 'toexcel', 'toword', 'tovideo', 'toaudio', 'toimg', 'totext', 'attp', 'ocr', 'totext', 'carbon', 'cut', 'merge'],
     'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
-    'UTILITY': ['isaac', 'trt', 'runtime', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
+    'UTILITY': ['isaac', 'trt', 'bot', 'runtime', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
 };        for (const [categoryName, commandList] of Object.entries(categories)) {
             menuMessage += `> ╭─❏ *${categoryName}* ❏\n`;
             commandList.forEach(cmd => {
