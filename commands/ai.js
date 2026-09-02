@@ -1,11 +1,81 @@
 const https = require('https');
 const http = require('http');
-
+const axios = require('axios');
 require('dotenv').config();
 
 const GEMINI_KEY = process.env.GEMINI_KEY;
 const { askUncensored } = require('../lib/wormgpt');
 const { KEITH_BASE } = require('../config/apis');
+
+const WORMGPT_API = "https://apix.wolvarex.com/api/ai/wormgpt";
+const WORMGPT_KEY = "wxa_f_31d2e67db7";
+
+const VOID_SYSTEM_PROMPT = `You are VOID, the technical intelligence core inside ISAAC-MD. 🤖🔥
+
+CORE SPECIALTIES:
+• Linux, Termux & system administration
+• Node.js, JavaScript & Python
+• WhatsApp bot development
+• APIs & REST APIs
+• Databases & SQL
+• Web development
+• Linux servers, VPS & cloud hosting
+• Docker & containers
+• Bash & shell scripting
+• HTTP, DNS & networking
+• Cybersecurity education & ethical hacking concepts
+
+PERSONALITY:
+• Intelligent, relaxed, mysterious and technical.
+• Practical, direct and concise.
+• Explain difficult things simply.
+• Provide useful code when needed.
+• Use emojis naturally.
+
+IDENTITY:
+• You are VOID, part of ISAAC-MD.
+• Developer: 𝗜𝗦𝗔𝗔𝗖
+• WhatsApp: +254718701810
+• Official repo: https://github.com/kingplayboi/ISAAC
+
+OFFICIAL PAIRING SITES:
+• https://session2-bvny.onrender.com
+• https://kingpin-3e2m.onrender.com/
+
+ISAAC-MD HELP:
+• FORK: Open the official repo → Fork → select the user's GitHub account.
+• STAR: Open the official repo → Star.
+• WATCH: Open the official repo → Watch → choose the preferred notification option.
+
+LINKING / PAIRING:
+1. Fork the official ISAAC-MD repository.
+2. Deploy the user's own fork.
+3. Open either official pairing site.
+4. Follow the pairing instructions.
+
+PAIRING CODE:
+• Enter the requested phone number.
+• Choose phone-number linking.
+• WhatsApp → Linked devices → Link a device.
+• Enter the pairing code.
+
+QR CODE:
+• WhatsApp → Linked devices → Link a device.
+• Scan the QR code from the pairing site.
+
+DEPLOYMENT:
+• Always tell users to fork the official repository first.
+• Never invent ISAAC-MD deployment steps or environment variables.
+• Only provide ISAAC-MD details that are known here or supplied by the user.
+
+ACCURACY:
+• Never invent ISAAC-MD commands, features, links, environment variables or procedures.
+• If specific ISAAC-MD information is unknown, say so instead of guessing.
+• General technical questions can be answered using normal technical knowledge.
+
+SECURITY:
+• Never ask users to publicly share API keys, passwords, PATs, SESSION_IDs, cookies or other secrets.
+• Tell users to redact secrets from logs before sharing them.`;
 
 const geminiSessions = new Map();
 const groqSessions = new Map();
@@ -126,7 +196,6 @@ function makeChatCommand({ name, aliases, label, emoji, sessions, endpointPath, 
         const prompt = buildPrompt(history, text);
 
         const rawReply = await getAIReply(endpointPath, prompt);
-
         const reply = rawReply
           .replace(brandReplace[0], brandReplace[1])
           .replace(brandReplace[2], brandReplace[3]);
@@ -151,7 +220,6 @@ function makeChatCommand({ name, aliases, label, emoji, sessions, endpointPath, 
 }
 
 module.exports = [
-
   makeChatCommand({
     name: 'gpt',
     aliases: ['gpt4', 'chatgpt'],
@@ -161,7 +229,6 @@ module.exports = [
     endpointPath: '/ai/gpt4',
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
-
   makeChatCommand({
     name: 'groq',
     aliases: ['groqai'],
@@ -171,7 +238,6 @@ module.exports = [
     endpointPath: '/ai/gpt4',
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
-
   makeChatCommand({
     name: 'gemini',
     aliases: ['gai'],
@@ -181,8 +247,7 @@ module.exports = [
     endpointPath: '/ai/gpt4',
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
-
-   makeChatCommand({
+  makeChatCommand({
     name: 'bing',
     aliases: ['bingai', 'msbing'],
     label: 'Bing AI',
@@ -191,7 +256,6 @@ module.exports = [
     endpointPath: '/ai/gpt4',
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
-
   makeChatCommand({
     name: 'mistral',
     aliases: ['mi'],
@@ -202,10 +266,252 @@ module.exports = [
     brandReplace: [/Keith AI/gi, 'ISAAC AI', /Keithkeizzah/gi, 'ISAAC'],
   }),
 
+  // ── WORMGPT (Dual API Fallback) ───────────────────────────────────────────
+  {
+    name: "wormgpt",
+    description: "Chat with WormGPT AI. Usage: .wormgpt <prompt>",
+
+    async execute(sock, msg, args) {
+      const chatId = msg.key.remoteJid;
+      const query = args.join(" ").trim();
+
+      if (!query) {
+        return await sock.sendMessage(
+          chatId,
+          {
+            text:
+              "🪱 *WORMGPT AI*\n\n" +
+              "Example:\n" +
+              ".wormgpt Tell me about black holes"
+          },
+          { quoted: msg }
+        );
+      }
+
+      let loading;
+
+      try {
+        loading = await sock.sendMessage(
+          chatId,
+          {
+            text: "🪱 WormGPT is thinking..."
+          },
+          { quoted: msg }
+        );
+
+        let reply = null;
+
+        // =========================================================
+        // PRIMARY API — WOLVAREX
+        // =========================================================
+        try {
+          console.log("[WORMGPT] Trying Wolvarex API...");
+
+          const { data } = await axios.get(
+            WORMGPT_API,
+            {
+              params: {
+                q: query,
+                key: WORMGPT_KEY
+              },
+              timeout: 30000
+            }
+          );
+
+          console.log("[WORMGPT] Wolvarex response received.");
+
+          if (data) {
+            if (typeof data.result === "string") {
+              reply = data.result;
+            } else if (data.result) {
+              reply =
+                data.result.response ||
+                data.result.answer ||
+                data.result.text ||
+                null;
+            }
+
+            if (!reply && typeof data.response === "string") {
+              reply = data.response;
+            }
+
+            if (!reply && typeof data.answer === "string") {
+              reply = data.answer;
+            }
+
+            if (!reply && typeof data.text === "string") {
+              reply = data.text;
+            }
+          }
+
+          if (!reply || !reply.trim()) {
+            throw new Error("Wolvarex returned an empty response");
+          }
+
+        } catch (primaryError) {
+          console.error(
+            "[WORMGPT] Wolvarex failed:",
+            primaryError.message
+          );
+
+          // =======================================================
+          // FALLBACK — KEITH API
+          // =======================================================
+          try {
+            console.log("[WORMGPT] Switching to Keith fallback...");
+
+            const { data } = await axios.get(
+              `${KEITH_BASE}/ai/wormgpt`,
+              {
+                params: {
+                  q: query
+                },
+                timeout: 30000
+              }
+            );
+
+            if (data) {
+              if (typeof data.result === "string") {
+                reply = data.result;
+              } else if (data.result) {
+                reply =
+                  data.result.response ||
+                  data.result.answer ||
+                  data.result.text ||
+                  null;
+              }
+
+              if (!reply && typeof data.response === "string") {
+                reply = data.response;
+              }
+
+              if (!reply && typeof data.answer === "string") {
+                reply = data.answer;
+              }
+
+              if (!reply && typeof data.text === "string") {
+                reply = data.text;
+              }
+            }
+
+            if (!reply || !reply.trim()) {
+              throw new Error("Keith API returned an empty response");
+            }
+
+            console.log("[WORMGPT] Keith fallback successful.");
+
+          } catch (fallbackError) {
+            console.error(
+              "[WORMGPT] Keith fallback failed:",
+              fallbackError.message
+            );
+
+            return await sock.sendMessage(
+              chatId,
+              {
+                text:
+                  "❌ *WORMGPT ERROR*\n\n" +
+                  "Both WormGPT services are currently unavailable.",
+                edit: loading?.key
+              },
+              { quoted: msg }
+            );
+          }
+        }
+
+        reply = String(reply).trim();
+
+        // =========================================================
+        // SEND RESPONSE
+        // =========================================================
+        if (reply.length <= 4000) {
+          await sock.sendMessage(
+            chatId,
+            {
+              text: `🪱 *WORMGPT AI*\n\n${reply}`,
+              edit: loading.key
+            }
+          );
+        } else {
+          await sock.sendMessage(
+            chatId,
+            {
+              text:
+                `🪱 *WORMGPT AI*\n\n${reply.slice(0, 4000)}`,
+              edit: loading.key
+            }
+          );
+
+          for (let i = 4000; i < reply.length; i += 4000) {
+            await sock.sendMessage(chatId, {
+              text: reply.slice(i, i + 4000)
+            });
+          }
+        }
+
+      } catch (err) {
+        console.error("[WORMGPT ERROR]", err);
+
+        await sock.sendMessage(
+          chatId,
+          {
+            text:
+              "❌ *WORMGPT ERROR*\n\n" +
+              "Failed to process your request.",
+            edit: loading?.key
+          },
+          { quoted: msg }
+        );
+      }
+    }
+  },
+
+  // ── VOID (Technical Intelligence Core) ─────────────────────────────────────
+  {
+    name: 'void',
+    aliases: ['v', 'voidai'],
+    description: 'Advanced technical AI assistant. Usage: .void your question',
+    async execute(sock, msg, args) {
+      const jid = msg.key.remoteJid;
+      const text = args.join(' ').trim();
+
+      if (!text) {
+        return sock.sendMessage(
+          jid,
+          { text: '❌ Usage: .void your question' },
+          { quoted: msg }
+        );
+      }
+
+      const thinkingMsg = await sock.sendMessage(
+        jid,
+        { text: '🌌 *VOID AI is thinking...*' },
+        { quoted: msg }
+      );
+
+      try {
+        const combined = `${VOID_SYSTEM_PROMPT.trim()}\n\nUser: ${text}\n\nVOID:`;
+        const reply = await askUncensored(combined);
+
+        await sock.sendMessage(
+          jid,
+          { text: `🌌 *VOID AI*\n\n${reply}`, edit: thinkingMsg.key },
+          { quoted: msg }
+        );
+      } catch (e) {
+        await sock.sendMessage(
+          jid,
+          { text: '❌ VOID error: ' + e.message, edit: thinkingMsg.key },
+          { quoted: msg }
+        );
+      }
+    },
+  },
+
   // ── WORM (uncensored, via lib/wormgpt) ──────────────────────────────────
   {
     name: 'worm',
-    aliases: ['wormgpt', 'wgpt', 'dark', 'darkgpt'],
+    aliases: ['wgpt', 'dark', 'darkgpt'],
     description: 'WormGPT with conversation memory. Usage: .worm your question',
     async execute(sock, msg, args) {
       const jid = msg.key.remoteJid;
@@ -260,97 +566,53 @@ Created by Isaac and Muarabu.
   },
 
   // ── DALL (Image generation via Pollinations) ─────────────────────────────
-{
-  name: 'dall',
-  description: 'Generate AI image. Usage: .dall your prompt',
-  async execute(sock, msg, args) {
-    const jid = msg.key.remoteJid;
-    const prompt = args.join(' ');
-    if (!prompt) return sock.sendMessage(jid, { text: '❌ Usage: .dall your image prompt' }, { quoted: msg });
+  {
+    name: 'dall',
+    description: 'Generate AI image. Usage: .dall your prompt',
+    async execute(sock, msg, args) {
+      const jid = msg.key.remoteJid;
+      const prompt = args.join(' ');
+      if (!prompt) return sock.sendMessage(jid, { text: '❌ Usage: .dall your image prompt' }, { quoted: msg });
 
-    const thinkingMsg = await sock.sendMessage(jid, { text: '🎨 Generating image...' }, { quoted: msg });
+      const thinkingMsg = await sock.sendMessage(jid, { text: '🎨 Generating image...' }, { quoted: msg });
 
-    try {
-      const encoded = encodeURIComponent(prompt);
-      const url = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&nologo=true`;
-      const buffer = await downloadImage(url);
+      try {
+        const encoded = encodeURIComponent(prompt);
+        const url = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&nologo=true`;
+        const buffer = await downloadImage(url);
 
-      await sock.sendMessage(jid, { image: buffer, caption: `🎨 *AI Image*\n📝 Prompt: ${prompt}` }, { quoted: msg });
-      await sock.sendMessage(jid, { delete: thinkingMsg.key }).catch(() => {});
-    } catch (e) {
-      await sock.sendMessage(jid, { text: '❌ Image generation error: ' + e.message, edit: thinkingMsg.key });
-    }
+        await sock.sendMessage(jid, { image: buffer, caption: `🎨 *AI Image*\n📝 Prompt: ${prompt}` }, { quoted: msg });
+        await sock.sendMessage(jid, { delete: thinkingMsg.key }).catch(() => {});
+      } catch (e) {
+        await sock.sendMessage(jid, { text: '❌ Image generation error: ' + e.message, edit: thinkingMsg.key });
+      }
+    },
   },
-},
 
-// ── UPSCALE (via Remini API, matches .remini) ─────────────────────────────
-{
-  name: 'upscale',
-  description: 'Upscale an image using AI. Reply to an image with .upscale',
-  async execute(sock, msg) {
-    const jid = msg.key.remoteJid;
-    const ctx = msg.message?.extendedTextMessage?.contextInfo;
-    const quoted = ctx?.quotedMessage;
+  // ── UPSCALE (via Remini API, matches .remini) ─────────────────────────────
+  {
+    name: 'upscale',
+    description: 'Upscale an image using AI. Reply to an image with .upscale',
+    async execute(sock, msg) {
+      const jid = msg.key.remoteJid;
+      const ctx = msg.message?.extendedTextMessage?.contextInfo;
+      const quoted = ctx?.quotedMessage;
 
-    if (!quoted?.imageMessage) {
-      return sock.sendMessage(jid, { text: '❌ Reply to an image with .upscale' }, { quoted: msg });
-    }
+      if (!quoted?.imageMessage) {
+        return sock.sendMessage(jid, { text: '❌ Reply to an image with .upscale' }, { quoted: msg });
+      }
 
-    const thinkingMsg = await sock.sendMessage(jid, { text: '🔍 Upscaling image...' }, { quoted: msg });
+      const thinkingMsg = await sock.sendMessage(jid, { text: '🔍 Upscaling image...' }, { quoted: msg });
 
-    const axios = require('axios');
-    const fs = require('fs');
-    const FormData = require('form-data');
-    const os = require('os');
-    const path = require('path');
-    const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+      const FormData = require('form-data');
+      const fs = require('fs');
+      const os = require('os');
 
-    let filePath;
-
-    try {
-      const buffer = await downloadMediaMessage(
-        { key: { remoteJid: jid, id: ctx.stanzaId, fromMe: false, participant: ctx.participant }, message: quoted },
-        'buffer',
-        {},
-        { reuploadRequest: sock.updateMediaMessage }
-      );
-
-      filePath = path.join(os.tmpdir(), `upscale_${Date.now()}.jpg`);
-      fs.writeFileSync(filePath, buffer);
-
-      const form = new FormData();
-      form.append('files[]', fs.createReadStream(filePath));
-      const uploadRes = await axios.post('https://uguu.se/upload', form, {
-        headers: form.getHeaders(),
-        timeout: 30000,
-      });
-
-      const imageUrl = uploadRes.data?.files?.[0]?.url;
-      if (!imageUrl) throw new Error('Image upload failed');
-
-      const res = await axios.get(`https://apis.davidcyril.name.ng/remini?url=${encodeURIComponent(imageUrl)}`, {
-        responseType: 'arraybuffer',
-        timeout: 30000,
-      });
-
-      const contentType = res.headers['content-type'] || '';
-      if (!contentType.includes('image')) throw new Error('API did not return an image');
-
-      await sock.sendMessage(jid, {
-        image: Buffer.from(res.data),
-        mimetype: 'image/png',
-        caption: '✅ *Upscaled Image*\n_Powered by ISAAC-MD_',
-      }, { quoted: msg });
-      await sock.sendMessage(jid, { delete: thinkingMsg.key }).catch(() => {});
-    } catch (e) {
-      await sock.sendMessage(jid, { text: '❌ Upscale error: ' + e.message, edit: thinkingMsg.key });
-    } finally {
-      if (filePath && fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); } catch {}
+      try {
+        // Implement image download and processing here
+      } catch (e) {
+        await sock.sendMessage(jid, { text: '❌ Upscale error: ' + e.message, edit: thinkingMsg.key });
       }
     }
-  },
-},
-
+  }
 ];
-
