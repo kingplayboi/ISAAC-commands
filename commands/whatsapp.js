@@ -364,7 +364,7 @@ module.exports = [
         },
         'buffer',
         {}
-      );
+      );	
 
       await sock.sendMessage(jid, {
         [type]: media,
@@ -673,4 +673,217 @@ module.exports = [
       }
 
       try {
- 
+        const iqNode = {
+          tag: 'iq',
+          attrs: {
+            to: '@s.whatsapp.net',
+            type: 'set',
+            xmlns: 'w:profile:picture'
+          },
+          content: [
+            {
+              tag: 'picture',
+              attrs: { type: 'image' },
+              content: []
+            }
+          ]
+        };
+
+        await sock.query(iqNode);
+        return sock.sendMessage(jid, { text: '🗑️ Profile picture removed successfully!' }, { quoted: msg });
+      } catch (err) {
+        console.error('rpp error:', err);
+        return sock.sendMessage(jid, { text: `❌ Failed to remove profile picture.\nError: ${err.message}` }, { quoted: msg });
+      }
+    }
+  },
+
+  // ── Send quoted text/media to group status ────────────────────
+  {
+    name: 'togroupstatus',
+    aliases: ['groupstatus', 'statusgroup'],
+    description: 'Send quoted text or media to group status',
+    async execute(sock, msg, args) {
+      const { jid, quotedMessage } = getQuoted(sock, msg);
+      const q = args.join(' ').trim();
+
+      if (!isOwner(msg)) {
+        return sock.sendMessage(jid, { text: '❌ Owner Only Command!' }, { quoted: msg });
+      }
+      if (!q && !quotedMessage) {
+        return sock.sendMessage(jid, {
+          text: '📌 Usage:\n' +
+            '• .togroupstatus <text>\n' +
+            '• Reply to an image/video/audio/document/sticker with .togroupstatus <caption>\n' +
+            '• Or just .togroupstatus to forward quoted media without caption'
+        }, { quoted: msg });
+      }
+
+      try {
+        let payload = { groupStatusMessage: {} };
+
+        if (quotedMessage) {
+          if (quotedMessage.imageMessage) {
+            const caption = q || quotedMessage.imageMessage.caption || '';
+            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.imageMessage);
+            payload.groupStatusMessage.image = { url: filePath };
+            if (caption) payload.groupStatusMessage.caption = caption;
+          } else if (quotedMessage.videoMessage) {
+            const caption = q || quotedMessage.videoMessage.caption || '';
+            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.videoMessage);
+            payload.groupStatusMessage.video = { url: filePath };
+            if (caption) payload.groupStatusMessage.caption = caption;
+          } else if (quotedMessage.audioMessage) {
+            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.audioMessage);
+            payload.groupStatusMessage.audio = { url: filePath };
+          } else if (quotedMessage.documentMessage) {
+            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.documentMessage);
+            payload.groupStatusMessage.document = { url: filePath };
+          } else if (quotedMessage.stickerMessage) {
+            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.stickerMessage);
+            payload.groupStatusMessage.sticker = { url: filePath };
+          } else if (quotedMessage.conversation || quotedMessage.extendedTextMessage?.text) {
+            payload.groupStatusMessage.text = quotedMessage.conversation || quotedMessage.extendedTextMessage.text;
+          }
+
+          if (q && !payload.groupStatusMessage.caption) {
+            payload.groupStatusMessage.caption = q;
+          }
+        } else {
+          payload.groupStatusMessage.text = q;
+        }
+
+        await sock.sendMessage(jid, payload, { quoted: msg });
+      } catch (err) {
+        console.error('togroupstatus error:', err);
+        return sock.sendMessage(jid, { text: `❌ Error sending group status: ${err.message}` }, { quoted: msg });
+      }
+    }
+  },
+
+  // ── Create a new group ─────────────────────────────────────────
+  {
+    name: 'creategc',
+    aliases: ['creategroup'],
+    description: 'Create a new WhatsApp group with optional participants',
+    async execute(sock, msg, args) {
+      const jid = resolveJid(msg);
+      const sender = msg.key.participant || msg.key.remoteJid;
+      const q = args.join(' ').trim();
+
+      if (!isOwner(msg)) {
+        return sock.sendMessage(jid, { text: '❌ Owner Only Command!' }, { quoted: msg });
+      }
+      if (!q) {
+        return sock.sendMessage(jid, {
+          text: '✏️ Usage: .creategc GroupName\nOr: .creategc GroupName 1234567890,9876543210'
+        }, { quoted: msg });
+      }
+
+      try {
+        let groupName = q;
+        let participants = [sender];
+
+        const parts = q.split(/\s+/);
+        if (parts.length > 1 && parts[parts.length - 1].match(/\d{10,}/)) {
+          groupName = parts.slice(0, -1).join(' ');
+          const numbers = parts[parts.length - 1].split(',');
+
+          for (const num of numbers) {
+            const cleanNum = num.replace(/[^0-9]/g, '');
+            if (cleanNum.length >= 10) {
+              participants.push(cleanNum + '@s.whatsapp.net');
+            }
+          }
+        }
+
+        const group = await sock.groupCreate(groupName, participants);
+        const inviteCode = await sock.groupInviteCode(group.id);
+
+        const text = `✅ *Group Created!*\n\n` +
+          `*Name*: ${groupName}\n` +
+          `*Members*: ${participants.length}\n` +
+          `*Link*: https://chat.whatsapp.com/${inviteCode}\n\n` +
+          `The group has been created with you as the admin.`;
+
+        return sock.sendMessage(jid, { text }, { quoted: msg });
+      } catch (err) {
+        console.error('creategc error:', err);
+        return sock.sendMessage(jid, { text: `❌ Failed to create group: ${err.message}` }, { quoted: msg });
+      }
+    }
+  },
+
+  // ── Demote all group admins ─────────────────────────────────────
+  {
+    name: 'demoteall',
+    aliases: ['demoteadmins', 'stripadmins'],
+    description: 'Demote all group admins',
+    async execute(sock, msg) {
+      const jid = resolveJid(msg);
+
+      if (!isOwner(msg)) {
+        return sock.sendMessage(jid, { text: '❌ Owner Only Command!' }, { quoted: msg });
+      }
+      if (!jid.endsWith('@g.us')) {
+        return sock.sendMessage(jid, { text: '❌ This command only works in groups!' }, { quoted: msg });
+      }
+
+      const metadata = await sock.groupMetadata(jid);
+      if (!isBotAdmin(sock, metadata)) {
+        return sock.sendMessage(jid, { text: '❌ Bot must be admin to demote others.' }, { quoted: msg });
+      }
+
+      try {
+        const botIds = getBotIdentifiers(sock);
+
+        const admins = metadata.participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
+        const demoteIds = admins
+          .map(a => a.id)
+          .filter(id => !botIds.has(id)); // add owner-number exclusion here if you keep an owner list
+
+        if (demoteIds.length === 0) {
+          return sock.sendMessage(jid, { text: 'ℹ️ No admins found to demote.' }, { quoted: msg });
+        }
+
+        await sock.groupParticipantsUpdate(jid, demoteIds, 'demote');
+
+        return sock.sendMessage(jid, {
+          text: `🔻 All admins have been demoted (${demoteIds.length}).`,
+          mentions: demoteIds
+        }, { quoted: msg });
+      } catch (err) {
+        console.error('demoteall error:', err);
+        return sock.sendMessage(jid, { text: `❌ Failed to demote admins: ${err.message}` }, { quoted: msg });
+      }
+    }
+  },
+
+  // ── Promote all non-admin members ────────────────────────────────
+  {
+    name: 'promoteall',
+    aliases: ['promotemembers', 'makeadmins'],
+    description: 'Promote all non-admin members to group admin',
+    async execute(sock, msg) {
+      const jid = resolveJid(msg);
+
+      if (!jid.endsWith('@g.us')) {
+        return sock.sendMessage(jid, { text: '❌ This command only works in groups!' }, { quoted: msg });
+      }
+      if (!isOwner(msg)) {
+        return sock.sendMessage(jid, { text: '❌ Only the bot owner can use this command.' }, { quoted: msg });
+      }
+
+      const metadata = await sock.groupMetadata(jid);
+      if (!isBotAdmin(sock, metadata)) {
+        return sock.sendMessage(jid, { text: '❌ I need to be a group admin to promote others.' }, { quoted: msg });
+      }
+
+      try {
+        const botIds = getBotIdentifiers(sock);
+
+        const promoteIds = metadata.participants
+          .map(p => p.id)
+          .filter(id =>
+            !botIds.has(id) &&
+            !metadata.participants.find(p => p.id === id && (p.admin === 'a
