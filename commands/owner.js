@@ -1,5 +1,6 @@
 module.exports = {
   name: 'owner',
+  aliases: ['master', 'dev', 'developer'],
   description: "Shows the bot owner's contact info.",
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;

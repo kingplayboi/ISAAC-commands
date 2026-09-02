@@ -1,5 +1,6 @@
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { isOwner } = require('../utils/isOwner');
+const { isBotAdmin, getBotIdentifiers } = require('../utils/isAdmin');
 
 function resolveJid(msg) {
   const rawJid = msg.key.remoteJid;
@@ -633,4 +634,43 @@ module.exports = [
     }
   },
 
-];
+  // ── Remove group profile picture ──────────────────────────────
+  {
+    name: 'rgpp',
+    aliases: ['removegpp', 'deletegpp', 'cleargpp'],
+    description: 'Remove group profile picture',
+    async execute(sock, msg) {
+      const jid = resolveJid(msg);
+
+      if (!isOwner(msg)) {
+        return sock.sendMessage(jid, { text: '❌ Owner Only Command!' }, { quoted: msg });
+      }
+      if (!jid.endsWith('@g.us')) {
+        return sock.sendMessage(jid, { text: '❌ This command can only be used in a group!' }, { quoted: msg });
+      }
+
+      try {
+        const metadata = await sock.groupMetadata(jid);
+        await sock.removeProfilePicture(metadata.id);
+        return sock.sendMessage(jid, { text: '🗑️ Group profile picture removed successfully!' }, { quoted: msg });
+      } catch (err) {
+        console.error('rgpp error:', err);
+        return sock.sendMessage(jid, { text: `❌ Failed to remove group profile picture.\nError: ${err.message}` }, { quoted: msg });
+      }
+    }
+  },
+
+  // ── Remove your own (bot's) profile picture ───────────────────
+  {
+    name: 'rpp',
+    aliases: ['removepic', 'deletepp', 'clearpp'],
+    description: "Remove your own profile picture",
+    async execute(sock, msg) {
+      const jid = resolveJid(msg);
+
+      if (!isOwner(msg)) {
+        return sock.sendMessage(jid, { text: '❌ Owner Only Command!' }, { quoted: msg });
+      }
+
+      try {
+ 
