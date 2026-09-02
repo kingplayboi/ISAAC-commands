@@ -73,8 +73,8 @@ menuMessage += `  🔌 *Plugins* : ${new Set(commands.values()).size} commands\n
 menuMessage += `└──────────────────────────────┘\n`;
 
 const categories = {
-    'OWNER': ['self', 'public', 'settings', 'botpp', 'getprefix', 'getpfp', 'pair', 'pair2', 'save', 'save1', 'kill', 'kill2', 'update', 'updatenow', 'eval', 'antilinkall', 'menutype', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'block', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos', 'oadmin', 'mygroups'],
-    'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'badword', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'amute', 'aunmute', 'ban', 'unban', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'antigm', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
+    'OWNER': ['self', 'public', 'settings', 'botpp', 'getprefix', 'getpfp', 'pair', 'pair2', 'save', 'save1', 'kill', 'kill2', 'update', 'updatenow', 'eval', 'antilinkall', 'menutype', 'rpp', 'creategc', 'antibot', 'antitag', 'welcomegoodbye', 'broadcast', 'restart', 'block', 'blocklist', 'logout', 'fetch', 'shell', 'getcmd', 'getfile', 'cat', 'addsudo', 'delsudo', 'checksudo', 'clearsudos', 'oadmin', 'mygroups'],
+    'GROUP': ['leavegroup', 'demote', 'groupinfo', 'kick', 'badword', 'mute', 'promote', 'tagall', 'warn', 'add', 'invite', 'join', 'welcome', 'goodbye', 'unmute', 'rgpp', 'amute', 'aunmute', 'ban', 'unban', 'demoteall', 'promoteall', 'close', 'open', 'desc', 'subject', 'link', 'revoke', 'icon', 'hidetag', 'antilink', 'antigm', 'setgreet', 'tag', 'disp-1', 'disp-7', 'disp-90', 'disp-off', 'approve', 'reject', 'admin', 'vcf', 'groupstatus', 'foreigners', 'antigstatus', 'antispam', 'antiword', 'common', 'gpp', 'gstatus'],
     'SETTINGS': ['anticall', 'antidelete', 'antiedit', 'wapresence', 'autoread', 'autorecording', 'autotyping', 'mode', 'prefix', 'autoview', 'autolike', 'autobio', 'pdm', 'zushi'],
     'DOWNLOADS': ['download', 'igstory', 'pindl', 'play2', 'video', 'video2', 'audio', 'spotify', 'play', 'tiktok', 'ig', 'fb', 'twitter', 'song', 'shazam', 'lyrics', 'lyrics2'],
     'AI': ['gemini', 'imagine', 'vision2', 'groq', 'mi', 'worm', 'gpt', 'dall', 'bing', 'upscale', 'vision', 'void', 'claude', 'wormgpt', 'tts', 'vocalremover', 'transcribe', 'muslimai', 'bibleai', 'speechwriter'],
@@ -84,7 +84,7 @@ const categories = {
     'CODING': ['enc', 'gpass', 'compile-py', 'compile-js', 'compile-c', 'compile-c++', 'base', 'unbase'],
     'MEDIA': ['s', 'take', 'photo', 'mix', 'smeme', 'vv', 'vv2', 'removebg', 'imagesearch', 'similarimage', 'remini'],
     'WHATSAPP': ['poll', 'react', 'del', 'setstatus', 'status', 'caption', 'doc', 'cinfo', 'clear'],
-    'CONVERTER': ['topdf', 'toexcel', 'toword', 'tovideo', 'toaudio', 'toimg', 'totext', 'attp', 'ocr', 'totext', 'carbon', 'cut', 'merge'],
+    'CONVERTER': ['topdf', 'toexcel', 'toword', 'tovideo', 'toviewonce', 'toaudio', 'toimg', 'totext', 'attp', 'ocr', 'totext', 'carbon', 'cut', 'merge'],
     'GAMES': ['game', 'tictactoe', 'move', 'ttend', 'rps', 'wordguess', 'guess', 'wgend', 'mathquiz', 'mans', 'answer'],
     'UTILITY': ['isaac', 'trt', 'bot', 'runtime', 'script', 'owner', 'calc', 'donate', 'alive', 'help', 'joke', 'menu', 'ping', 'quote', 'user', 'stats', 'uptime', 'time'],
 };        for (const [categoryName, commandList] of Object.entries(categories)) {
