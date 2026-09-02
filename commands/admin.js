@@ -5,7 +5,7 @@ module.exports = {
     const jid = msg.key.remoteJid;
 
     if (!jid.endsWith('@g.us')) {
-      return sock.sendMessage(jid, { text: '❌ This command only works in groups.' }, { quoted: msg });
+      return sock.sendMessage(jid, { text: '*❌ Is this a group asshole ?, this command is meant for groups.*' }, { quoted: msg });
     }
 
     const metadata = await sock.groupMetadata(jid);
