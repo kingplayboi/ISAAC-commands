@@ -364,7 +364,7 @@ module.exports = [
         },
         'buffer',
         {}
-      );	
+      );
 
       await sock.sendMessage(jid, {
         [type]: media,
@@ -660,7 +660,7 @@ module.exports = [
     }
   },
 
-  // ── Remove your own (bot's) profile picture ───────────────────
+   // ── Remove your own (bot's) profile picture ───────────────────
   {
     name: 'rpp',
     aliases: ['removepic', 'deletepp', 'clearpp'],
@@ -704,7 +704,7 @@ module.exports = [
     aliases: ['groupstatus', 'statusgroup'],
     description: 'Send quoted text or media to group status',
     async execute(sock, msg, args) {
-      const { jid, quotedMessage } = getQuoted(sock, msg);
+      const { jid, ctx, quotedMessage } = getQuoted(sock, msg);
       const q = args.join(' ').trim();
 
       if (!isOwner(msg)) {
@@ -723,25 +723,31 @@ module.exports = [
         let payload = { groupStatusMessage: {} };
 
         if (quotedMessage) {
+          const mediaKey = {
+            remoteJid: jid,
+            id: ctx.stanzaId,
+            participant: ctx.participant || msg.key.participant,
+          };
+
           if (quotedMessage.imageMessage) {
             const caption = q || quotedMessage.imageMessage.caption || '';
-            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.imageMessage);
-            payload.groupStatusMessage.image = { url: filePath };
+            const buffer = await downloadMediaMessage({ message: quotedMessage, key: mediaKey }, 'buffer', {});
+            payload.groupStatusMessage.image = buffer;
             if (caption) payload.groupStatusMessage.caption = caption;
           } else if (quotedMessage.videoMessage) {
             const caption = q || quotedMessage.videoMessage.caption || '';
-            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.videoMessage);
-            payload.groupStatusMessage.video = { url: filePath };
+            const buffer = await downloadMediaMessage({ message: quotedMessage, key: mediaKey }, 'buffer', {});
+            payload.groupStatusMessage.video = buffer;
             if (caption) payload.groupStatusMessage.caption = caption;
           } else if (quotedMessage.audioMessage) {
-            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.audioMessage);
-            payload.groupStatusMessage.audio = { url: filePath };
+            const buffer = await downloadMediaMessage({ message: quotedMessage, key: mediaKey }, 'buffer', {});
+            payload.groupStatusMessage.audio = buffer;
           } else if (quotedMessage.documentMessage) {
-            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.documentMessage);
-            payload.groupStatusMessage.document = { url: filePath };
+            const buffer = await downloadMediaMessage({ message: quotedMessage, key: mediaKey }, 'buffer', {});
+            payload.groupStatusMessage.document = buffer;
           } else if (quotedMessage.stickerMessage) {
-            const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.stickerMessage);
-            payload.groupStatusMessage.sticker = { url: filePath };
+            const buffer = await downloadMediaMessage({ message: quotedMessage, key: mediaKey }, 'buffer', {});
+            payload.groupStatusMessage.sticker = buffer;
           } else if (quotedMessage.conversation || quotedMessage.extendedTextMessage?.text) {
             payload.groupStatusMessage.text = quotedMessage.conversation || quotedMessage.extendedTextMessage.text;
           }
@@ -912,29 +918,35 @@ module.exports = [
     aliases: ['tovo', 'tovv'],
     description: 'Send quoted media (image/video/audio) as view-once message',
     async execute(sock, msg) {
-      const { jid, quotedMessage } = getQuoted(sock, msg);
+      const { jid, ctx, quotedMessage } = getQuoted(sock, msg);
 
       if (!quotedMessage) {
         return sock.sendMessage(jid, { text: '❌ Reply to an image, video, or audio message to make it view-once.' }, { quoted: msg });
       }
 
       try {
+        const mediaKey = {
+          remoteJid: jid,
+          id: ctx.stanzaId,
+          participant: ctx.participant || msg.key.participant,
+        };
+
         if (quotedMessage.imageMessage) {
           const caption = quotedMessage.imageMessage.caption || '';
-          const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.imageMessage);
-          await sock.sendMessage(jid, { image: { url: filePath }, caption, viewOnce: true }, { quoted: msg });
+          const buffer = await downloadMediaMessage({ message: quotedMessage, key: mediaKey }, 'buffer', {});
+          await sock.sendMessage(jid, { image: buffer, caption, viewOnce: true }, { quoted: msg });
         }
 
         if (quotedMessage.videoMessage) {
           const caption = quotedMessage.videoMessage.caption || '';
-          const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.videoMessage);
-          await sock.sendMessage(jid, { video: { url: filePath }, caption, viewOnce: true }, { quoted: msg });
+          const buffer = await downloadMediaMessage({ message: quotedMessage, key: mediaKey }, 'buffer', {});
+          await sock.sendMessage(jid, { video: buffer, caption, viewOnce: true }, { quoted: msg });
         }
 
         if (quotedMessage.audioMessage) {
-          const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.audioMessage);
+          const buffer = await downloadMediaMessage({ message: quotedMessage, key: mediaKey }, 'buffer', {});
           await sock.sendMessage(jid, {
-            audio: { url: filePath },
+            audio: buffer,
             mimetype: 'audio/mpeg',
             ptt: true,
             viewOnce: true
@@ -948,3 +960,4 @@ module.exports = [
   },
 
 ];
+
