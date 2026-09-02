@@ -886,4 +886,65 @@ module.exports = [
           .map(p => p.id)
           .filter(id =>
             !botIds.has(id) &&
-            !metadata.participants.find(p => p.id === id && (p.admin === 'a
+            !metadata.participants.find(p => p.id === id && (p.admin === 'admin' || p.admin === 'superadmin'))
+          );
+
+        if (promoteIds.length === 0) {
+          return sock.sendMessage(jid, { text: 'ℹ️ No non-admin members to promote.' }, { quoted: msg });
+        }
+
+        await sock.groupParticipantsUpdate(jid, promoteIds, 'promote');
+
+        return sock.sendMessage(jid, {
+          text: `⬆️ All members have been promoted (${promoteIds.length}).`,
+          mentions: promoteIds
+        }, { quoted: msg });
+      } catch (err) {
+        console.error('promoteall error:', err);
+        return sock.sendMessage(jid, { text: `❌ Failed to promote members: ${err.message}` }, { quoted: msg });
+      }
+    }
+  },
+
+  // ── Convert quoted media to view-once ───────────────────────────
+  {
+    name: 'toviewonce',
+    aliases: ['tovo', 'tovv'],
+    description: 'Send quoted media (image/video/audio) as view-once message',
+    async execute(sock, msg) {
+      const { jid, quotedMessage } = getQuoted(sock, msg);
+
+      if (!quotedMessage) {
+        return sock.sendMessage(jid, { text: '❌ Reply to an image, video, or audio message to make it view-once.' }, { quoted: msg });
+      }
+
+      try {
+        if (quotedMessage.imageMessage) {
+          const caption = quotedMessage.imageMessage.caption || '';
+          const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.imageMessage);
+          await sock.sendMessage(jid, { image: { url: filePath }, caption, viewOnce: true }, { quoted: msg });
+        }
+
+        if (quotedMessage.videoMessage) {
+          const caption = quotedMessage.videoMessage.caption || '';
+          const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.videoMessage);
+          await sock.sendMessage(jid, { video: { url: filePath }, caption, viewOnce: true }, { quoted: msg });
+        }
+
+        if (quotedMessage.audioMessage) {
+          const filePath = await sock.downloadAndSaveMediaMessage(quotedMessage.audioMessage);
+          await sock.sendMessage(jid, {
+            audio: { url: filePath },
+            mimetype: 'audio/mpeg',
+            ptt: true,
+            viewOnce: true
+          }, { quoted: msg });
+        }
+      } catch (err) {
+        console.error('toviewonce command error:', err);
+        return sock.sendMessage(jid, { text: "❌ Couldn't send the media. Try again." }, { quoted: msg });
+      }
+    }
+  },
+
+];
